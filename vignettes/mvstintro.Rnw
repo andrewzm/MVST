@@ -1,0 +1,395 @@
+
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{amsbsy} 
+\usepackage{natbib}
+\usepackage{tikz}
+
+%\VignetteEngine{knitr::knitr} 
+%\VignetteIndexEntry{Introduction to MVST}
+
+\newcommand{\bvec} {\textbf{\textit{b}}}
+\newcommand{\dvec} {\textbf{\textit{d}}}
+\newcommand{\avec} {\textbf{\textit{a}}}
+\newcommand{\evec} {\textbf{\textit{e}}}
+\newcommand{\hvec} {\textbf{\textit{h}}}
+\newcommand{\xvec} {\textbf{\textit{x}}}
+\newcommand{\yvec} {\textbf{\textit{y}}}
+\newcommand{\zvec} {\textbf{\textit{z}}}
+\newcommand{\wvec} {\textbf{\textit{w}}}
+\newcommand{\vvec} {\textbf{\textit{v}}}
+\newcommand{\svec} {\textbf{\textit{s}}}
+\newcommand{\uvec} {\textbf{\textit{u}}}
+\newcommand{\gvec} {\textbf{\textit{g}}}
+\newcommand{\fvec} {\textbf{\textit{f}}}
+\newcommand{\rvec} {\textbf{\textit{r}}}
+\newcommand{\zerob} {{\bf 0}}
+\newcommand{\betab} {\boldsymbol {\beta}}
+\newcommand{\muvec} {\boldsymbol {\mu}}
+
+\newcommand{\Amat} {\textbf{\textit{A}}}
+\newcommand{\Dmat} {\textbf{\textit{D}}}
+\newcommand{\Qmat} {\textbf{\textit{Q}}}
+\newcommand{\Cmat} {\textbf{\textit{C}}}
+\newcommand{\Imat} {\textbf{\textit{I}}}
+
+\bibliographystyle{plain}
+
+\voffset -0.5in
+\oddsidemargin -0.1in
+\textheight 21cm
+\textwidth 6.8in
+\linespread{1}
+
+\title{Introducing the package \texttt{MVST}}
+\author{RATES}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+MVST is an \emph{R Software} package which facilitates the 
+construction of Gaussian multi-variate spatio-temporal fields. These fields can be
+a-priori independent or co-regionalised. The package also allows the variates to be 
+spatial-only, in which case they are assumed to be repeatedly observed in time.
+MVST is designed so that spatio-temporal fields can be decomposed using arbitrary basis functions.
+To date only finite elements are implemented, but in principle the package allows for any
+arbitrary decomposition, which can be different for each field.
+
+In this first vignette, we show the basic functionality of the package by carrying out a simplified mass-balance study of the Antarctic ice sheet using satellite altimetry. Further functionality will be exemplified in a second vignette.
+
+\end{abstract}
+
+
+\section{Introduction}
+
+In this introductory vignette we will adopt a very simple approach to modelling the Antarctic ice sheet. We will consider a single spatio-temporal data set, that from the Ice, Cloud and Elevation Satellite (ICESat), and assume that it measures only a subset of all processes. We also model the system of processes being observed on a rather coarser mesh in order to reduce computational times. However, the example is sufficiently general to indicate possible extensions, and expose limitations of the approach.
+
+\noindent {\bf Note: You need at least 8GB of random-access memory to run the code in this vignette.}
+
+\section{Problem setup}
+
+For this example we will need the packages \texttt{Matrix, devtools, ggplot2, MVST} and \texttt{linalg}. The last two packages are available from the github page \texttt{http://github.com/andrwzm} and can be installed using the command \texttt{install\_git} from the package \texttt{devtools}. Since \texttt{MVST} is still under development we assume that we have it on disk somewhere and can load it accordingly using the \texttt{load\_all} command in \texttt{devtools}:
+
+<<lib-load>>=
+library(Matrix)
+library(devtools)
+library(ggplot2)
+library(linalg)
+load_all("..")
+@
+
+\noindent The package \texttt{MVST} provides three datasets for this example. 
+\begin{itemize}
+\item \texttt{icesat}: A sample of the entire ICESat data set, which denote height changes in m yr$^{-1}$ at certain locations in space and time.
+\item \texttt{surf\_fe}: The triangulation on which we will be modelling the ice sheet processes.
+\item \texttt{shapefiles}: Some polygons such as the Antarctic grounding line and coastline which will be used for plotting purposes.
+\end{itemize}
+
+<<data-load>>=
+data(icesat)
+data(surf_fe)
+data(shapefiles)
+@
+
+A crucial variable in the program is \texttt{t\_axis}. This denotes the time horizon over which the processes will be modelled. It is important that all data contain a column \texttt{t} which has elements within the array \texttt{t\_axis}. In this example we will take the year 2003 to be our starting point $t = 0$ and assume that each unit is a yearly interval. Thus for the period 2003--2009 we set
+
+<<taxis-set>>=
+t_axis=0:6
+@
+
+If we have data sets extending further back in time we can set \texttt{t\_axis} to be negative too. Now that we have the data and libraries loaded we can proceed to construct the meshes and assemble data into objects for use with the \texttt{MVST} package. First, however, we outline the use of a useful function which helps to minimise analysis time, \texttt{md5\_cache}.
+
+\texttt{md5\_cache} returns a function which caches the results of a program function evaluation, so that it can be quickly loaded on re-run (this is extensivelly used in this vignette). In this vignette we will cache temporary results in the \texttt{cache} directory located in our home folder by initialising
+
+<<md5>>=
+md5_wrapper <- md5_cache("~/cache/")
+@
+
+\noindent \texttt{md5\_wrapper} is itself a function which we shall use to cache the results from function evaluations, and takes the function name as the first argument. So, \texttt{md5\_wrapper(fn,a,b)} will evaluate (and cache) results from \texttt{fn} with arguments \texttt{a} and \texttt{b}. Examples will be seen in the remainder of the text.
+
+\subsection{Meshes}
+
+
+All processes, are assumed to be accurately constructed on a triangulation. We provide standard triangulations for the Antarctic ice sheet in the package. However it is still useful to note how these are constructed. 
+
+To define a triangulation we need at least two items, a two-column matrix of vertices \texttt{p} and a 3 column matrix \texttt{t} in which each row identifies the nodes composing a single triangle. The triangulations construct what are known as `tent functions', which are the basis function we employ. From these tent functions two matrices can be found, known as the \emph{mass matrix} \texttt{M} and the \emph{stiffness matrix} \texttt{K}. These matrices, constructed using inner products and derivatives, are essential for defining the smoothness properties of the field. Standard routines exist to construct these matrices from \texttt{p} and \texttt{t}.
+
+A \texttt{Mesh} object is set up by calling the function \texttt{initFEbasis} using the appropriate arguments:
+<<mesh-init>>=
+Mesh <- md5_wrapper(initFEbasis,p=surf_fe$p,
+                                t=surf_fe$t,
+                                M=surf_fe$M,
+                                K=surf_fe$K)
+@
+
+\noindent The object \texttt{Mesh} will be used for several things, not least for plotting the results following inference.
+
+An elegant feature of the package is the ease with which we can attribute properties to each node in the mesh. For instance, we will want to know whether a node is within the grounding line or not, or whether it lies in an island or within the mainland. We can do this by using the \texttt{attribute\_polygon} function. In the following we take the locations \texttt{x,y} of each node in the mesh using \texttt{Mesh[c("x","y")]} and attribute to it an island number (using \texttt{shapefiles\$Islands}), a flag indicating whether it is within the grounding line (using \texttt{shapefiles\$grounding\_sub}) and another flag indicating whether it is within the coastline (using \texttt{shapefiles\$coast\_sub}). Note that for this problem, the coastline includes floating ice shelves and thus encloses the grounding line.
+
+<<mesh_attribute>>=
+Mesh["island"] <- md5_wrapper(attribute_polygon,Mesh[c("x","y")],shapefiles$Islands)
+Mesh["in_land"] <- md5_wrapper(attribute_polygon,Mesh[c("x","y")],shapefiles$grounding_sub) | 
+                                                 Mesh["island"]
+Mesh["in_coast"] <-md5_wrapper(attribute_polygon,Mesh[c("x","y")],shapefiles$coast_sub) | 
+                                                 Mesh["island"]
+@
+
+\noindent We can also attribute a `mass per unit height change' field to each node. This is facilitated by the field \texttt{area\_tess\_km2} of \texttt{Mesh} which contains the area of the Voronoi tessellation associated with the triangulation. In general, the mass attributed to each element will vary from process to process. In this example, we will simply assume that the mass change of a single Voronoi cell occurs at a density of 500 kg m$^{-3}$ so that
+
+<<mesh_mass>>=
+Mesh["mass_GT_per_year"] <- Mesh["area_tess_km2"] * 0.5/1000
+@
+
+We can plot any variable associated with the mesh, both for checking and visualisation purposes. First we define a function which will be used for plotting Antarctica's coastline and grounding line and nearby islands using \texttt{ggplot2}. The function takes a \texttt{ggplot} object and overlays it with the required polygons:
+
+
+<<PlotAnt>>=
+ PlotAntarctica <- function(g,shapefiles) {
+   AIS_x <- c(-2800,2800)
+   AIS_y <- c(-2500,2500)
+   g <- g +
+     geom_path(data = shapefiles$grounding_sub,aes(x,y),colour="black") +
+     geom_path(data= shapefiles$coast_sub,aes(x,y),linetype=2,size=0.5) +
+     geom_path(data=shapefiles$Islands,aes(x,y,group=id))  + xlab("x (km)") + ylab("y (km)") +
+     coord_fixed(xlim=AIS_x,ylim=AIS_y)
+ }
+@
+
+\noindent To plot the nodes which are within the coastline, we can then simply type:
+
+<<plot_coast,fig.height=4>>=
+g <- plot(Mesh,"in_coast",size=1)
+print(PlotAntarctica(g,shapefiles))
+@
+
+\subsection{Observations}
+
+\texttt{MVST} provides a constructor for observations which takes care of most pre-processing typical in these types of problems. In the following we take the raw ICESat data, throw away data which is greater than 5 in amplitude, construct a grid of 100 $\times$ 100 km, and take the processed data to be the median in every grid box (the error will be the median absolute deviation of readings in each box). We also attribute the object with a name \texttt{icesat}. For a list of further arguements which can be suppled, plrease refer to the manual.
+
+<<icesat_obs>>=
+icesat_obs <- Obs(df=icesat,
+                  abs_lim = 5,
+                  avr_method = "median",
+                  box_size=100,
+                  name="icesat")
+@
+
+\noindent Once we have constructed an observation object we can easily plot it. In the following, we plot the data in 2006, and set saturation limits at $-0.5$ and $0.5$.
+
+<<plot_obs,fig.height=4>>=
+g <- plot(subset(icesat_obs,t==3),"z",pt_size=1,max=0.5,min=-0.5)
+print(PlotAntarctica(g,shapefiles))
+@
+
+\noindent Other fields related to the observations can be plotted in the same way. Note that we can also attribute certain characteristics to the observations using the \texttt{attribute\_polygon} command (see above) and the \texttt{attribute\_data} command, see manual.
+
+\subsubsection*{Pseudo-observations}
+
+In the Antarctic ice sheet we would like to constrain the field to be zero over the ocean. For this reason we can create a pseudo-data set in which the data record exactly zero on the mesh vertices which lie outside the continent's coastline. This can be implemented as follows. First, create a data frame with \texttt{x,y} coordinates which coincide with the required vertices
+
+<<pseudo1>>=
+pseudo_single_frame <- subset(Mesh,in_coast==F,select=c(x,y))
+pseudo_single_frame$z <- 0
+pseudo_single_frame$std <- 1e-6
+@
+
+\noindent and then extend it to repeat for each time point
+
+<<pseudo2>>=
+pseudo_df <- plyr::adply(t_axis,1,function(x) {
+                            return(cbind(pseudo_single_frame,data.frame(t=x)))
+                            })
+@
+
+\noindent Once we have the required data frame we can assemble it into an \texttt{MVST} object as above (this time without any pre-processing)
+<<pseudo3>>=
+pseudo <- Obs(df=pseudo_df,name="pseudo")
+@
+
+\subsection{The spatio-temporal process}
+
+In this section we describe how we can construct a spatio-temporal model over the defined mesh. The model we will consider is of the form
+\begin{equation}
+\xvec_{t+1} = \muvec_t + \Amat_t\xvec_t + \Dmat\betab + \evec_t
+\end{equation}
+\noindent where $\xvec_t$ is the quantity we are interested in, $\muvec_t$ is a temporally evolving known mean, the matrix $\Amat_t$ describes how $\xvec_t$ evolves from on time point to the next, $\Dmat\betab$ are some temporally-invariant effects and $\evec_t$ is the added disturbance (random) at each time point. Note that since $\evec_t$ is random, so is $\xvec_t$, and our uncertainty in this system is characterised by incomplete knowledge of the initial condition ($\xvec_0$), weights on the fixed effects ($\betab$) and the disturbance $\evec_t$. The task is thus to estimate $\xvec_t$ at each time point and, possibly, $\betab$. First, however, we need to define all the other quantities, which are temporally evolving functions. 
+
+We shall assume that $\muvec_t$ is zero everywhere. It is important that this function returns, at each time point, a matrix of the appropriate size (in this case the number of vertices):
+
+<<mu>>=
+ mu <- function(k) { # time-varying matrix for mu
+   return(matrix(0,nrow(Mesh),1)) 
+ }
+@
+
+For $\Amat$, we shall assume that the process at each vertex depends only on the process at the same location at the previous time point, so that $\Amat$ is diagonal. In this case we shall take the diagonal elements to be 0.2, indicating poor association across time points. This is not true for the system under study, since changes due to ice dynamics are temporally smooth, however this suffices for this simple example:
+<<A>>=
+A <- function(k) {  # time-varying matrix for A
+   0.2*Imat(nrow(Mesh))
+ }
+@
+\noindent Again, it is important that the function returns a matrix of the appropriate size.
+
+The difficult term to define in this problem is $\evec_t$. In principle, $\evec_t$ is not spatially uncorrelated and is, in itself, a spatial random field. Defining a spatial random field on a triangulation is facilitated using the stochastic partial differential approach of \cite{Lindgren_2011}. Details of this approach are beyond the scope of this vignette, however it suffices to say that we can define the approximate smoothness properties \texttt{nu}, the squared inverse expected amplitude \texttt{desired\_prec} and the practical range \texttt{l} of $\evec_t$ on the triangulation through its precision matrix $\Qmat$. In the following we define a field on the \texttt{Mesh} which has smoothness 1, an expected amplitude of 1 (note that I use expected amplitude loosely to describe the square-root marginal standard deviation of the field) and a practical range of 1200km:
+
+<<Q>>=
+ Q <- function(k) {  # time-varying matrix for Q
+    Prec_from_SPDE_wrapper(M = mass_matrix(Mesh),
+                           K = stiffness_matrix(Mesh),
+                           nu = 1,
+                           desired_prec = 1, 
+                           l = 1200) 
+}
+@
+\noindent Note that \texttt{desired\_prec} = `$1 / (\textrm{expected amplitude})^2$'. Both \texttt{desired\_prec} and \texttt{l} can be supplied as vectors, in which case the properties of $\evec_t$ also vary in space. This will not be considered in this vignette.
+
+Finally, now that we have the required matrices we need to assemble them into a variable auto-regressive model object. This can be done using the command \texttt{VAR\_Gauss}. Note how the time axis is also supplied to the object; this defines the size of the auto-regressive object which will be generated. Not that we can define time points beyond or previous to where we have data for hindcasting and forecasting.
+
+<<SURF_VAR>>=
+SURF_VAR <- VAR_Gauss( mu = mu,A=A, Qw = Q,t_axis = t_axis,name="SURF")
+@
+
+Once we have the auto-regressive model set up, all that remains is to `attach' it to the basis functions we are using. In this case our basis functions constitute a set of tent functions, however these could have been any functions (which need not be complete or orthonormal):
+
+<<SURF>>=
+SURF <- GMRF_basis(G = SURF_VAR, Basis = Mesh)
+@
+
+The \texttt{SURF} object is the quantity of interest here. This contains all the information we need to carry out inference with. In general we can set many similar objects and link them together through the observations. In this example we only have two observation data sets so the graph is actually quite simple:
+
+\begin{center}
+\begin{tikzpicture}[scale=1,every node/.style={transform shape}]
+%[inner sep=1mm] 
+[line width=2pt]
+\draw (0,0) node(SURF) {\texttt{SURF}};
+\draw (2,-1) node(icesat) {\texttt{icesat\_obs}};
+\draw (2,1) node(pseudo) {\texttt{pseudo}};
+
+\draw [->] (SURF) to (icesat);
+\draw [->] (SURF) to (pseudo);
+
+\end{tikzpicture}
+\end{center}
+
+\noindent since we assume that both the pseudo-observations and \texttt{ICESat} are recording the process of interest, in this case \texttt{SURF}. Note the directionality of the arrow; this indicates the direction of causality, it is the process which is generating the observations and not the other way round.
+
+We implement these links as follows:
+<<Cmat>>=
+L1 <- link(SURF,icesat_obs)
+L2 <- link(SURF,pseudo)
+@
+\noindent where the main function of the \texttt{link} function is to find the matrix $\Cmat$ in the observation equations
+\begin{equation}
+\zvec_t = \Cmat_t\xvec_t + \evec_t
+\end{equation}
+\noindent since this is generally quite involved. In this equation, $\zvec_t$ is the observation at time $t$ and $\evec_t$ is the observation standard deviation. The \texttt{link} function allows for both point-wise observations (such as ICESat or GPS) and observations with a large spatial footprint defined using \texttt{Obs\_poly()} (explored in the next vignette).
+
+Once we have the links we can create a graph object, which is simply a set of link and vertices as follows:
+<<Graph>>=
+e <- link_list(list(L1,L2))
+v <- block_list(list(G1=SURF,O1=icesat_obs,O2 = pseudo))
+G <- Graph(e=e,v=v)
+@
+\noindent The object \texttt{G} can be rather complex, particularly when we consider multiple observations and processes. For this reason we compress it into a two-node network, with all the processes concatenated together as one batch, and all the observations grouped together. This is done using the following command
+
+<<Graph_reduced>>= 
+G_reduced <- compress(G)
+@
+
+\noindent Note the warning: This highlights the fact that there were attributes in \texttt{icesat\_obs} such as \texttt{in\_land}, which were not present in the description of \texttt{pseudo}. In this case only the common fields are kept. 
+
+\texttt{G\_reduced} consists of two (enormous) vertices and just one link. This is a graph which is very simple to deal with, and we shall use this to carry out inference on the unknowns appearing in our spatio-temporal model.
+
+\section{Inference}
+
+The equations for estimating $\xvec_t$ and $\betab_t$ in this simple case are relatively straightforward, and we provide the function \texttt{Infer} for this. In most cases, \texttt{Infer} is sufficient, provided that reasonable values are set for all unknowns appearing above. If this is not the case, and other parameters also need to be estimated, we need to carry out some further work; this is beyond the scope of this vignette.
+
+\subsection{Marginal inference on all vertices}
+
+If we wish to carry out inference on all vertices (warning: this might be quite computationally intensive), then we can simply call \texttt{Infer} as follows:
+
+<<Infer,cache=TRUE>>=
+ Results <- Infer(G_reduced)
+@ 
+
+\noindent \texttt{Results} is a list with at least two elements. The first, \texttt{Graph}, is a copy of the graph used for inference (in our case \texttt{G\_reduced}. The second \texttt{Post\_GMRF} contains details on the expectation and the uncertainty of our estimates in fields \texttt{x\_mean} and \texttt{x\_margvar} respectively. 
+
+As shown above, \texttt{MVST} provides several useful functions for simply plotting the results following an update. Here we will show how we can plot the expectation of $\xvec_t$ for some $t$, which is stippled when the absolute expectation is greater than the standard deviation of the estimate (`significant'). First, we assign the time point we wish to plot (in this case $t = 2$) to a field \texttt{to\_plot}:
+
+<<Plot>>=
+Mesh["to_plot"] <- c(subset(Results$Post_GMRF,t==2,select=x_mean))
+@
+
+\noindent and then create another field \texttt{marg\_std}, which will be used for stippling:
+
+<<Plot2>>=
+ Mesh['marg_std'] <- sqrt(subset(Results$Post_GMRF,t==2,select=x_margvar))
+@
+
+Next, we can make use of the function \texttt{plot\_interp} to produce an interpolated map of the field's expectation. Here we pass as arguments the number of grid points to use on each axis \texttt{ds}, colour thresholds \texttt{min, max} and the legent title through \texttt{leg\_title}.
+
+<<Plot3>>=
+g <- plot_interp(Mesh,"to_plot",ds=500,min=-0.5,max=0.5,leg_title="m/yr")
+@
+
+\noindent We can plot the triangulation by simply plotting the mesh through \texttt{plot(Mesh, plot\_dots = F)} where \texttt{plot\_dots = F} indicates that we do not wish to plot a point at each vertex node. Since we wish to overlay it over what we have plotted so far in \texttt{g} and add the Antarctic shapefiles we use
+
+<<Plot4>>=
+g <- plot(Mesh,g=PlotAntarctica(g,shapefiles),plot_dots=F)
+@
+
+\noindent Finally we add the stipples where required in green and print the plot.
+<<Plot5,fig.height=6,dev='png',dpi=800>>=
+g <- g +  geom_point(data = subset(Mesh,abs(to_plot) > (marg_std)),
+                     aes(x,y),size=1,colour=scales::muted("green")) +
+    theme(text = element_text(size=15))
+print(g)
+@
+
+
+\subsection{Inference on linear combination of vertices}
+
+Frequently, producing whole maps of the processes under investigation is overly costly. For the Antarctica example, a Gaussian update on the full model with all data sets can only be run on a high memory machine ($>$ 72GB RAM) and takes several hours. We can, however, obtain summary estimates in a few minutes on a high-end desktop with reasonable memory requirements. These summaries might be the expectation and uncertainty over a region, or sector in the Antarctica case, over multiple processes and even over multiple time points. Although this is particularly useful for when we are using observations with a large spatial support, we shall outline the basic method here.
+
+Recall that the graph object has only two nodes, one pertaining to the processes and one to the observations. The first task is to access the data frame of the processes (by default the first vertex in the graph) which we can do through
+
+<<getDf>>=
+graph_df <- getDf(G@v[[1]])
+@
+
+\noindent where \texttt{getDf} simply returns the required data frame from any \texttt{MVST} object. Next, we instruct what combinations we want. In this example we will generate two linear combinations, the first the total grounded mass change over all time points and the second the total grounded mass change in 2007 ($t==4$). The vertices which are needed are flagged as follows:
+
+<<Comb>>=
+Comb <- rbind(((graph_df$t== 2) & (graph_df$in_land == T))*graph_df$mass_GT_per_year,
+                       ((graph_df$t== 4) & (graph_df$in_land == T))*graph_df$mass_GT_per_year)
+@
+
+With the graph and the combination matrix \texttt{Comb} defined we are now in a position to carry out inference on the linear combination through:
+
+<<Results_comb,cache=TRUE>>=
+Results_linear_comb <- Infer(G_reduced,fine_scale=F,Comb = Comb)
+@
+
+\noindent \texttt{Results\_linear\_comb} now contains a third field, which summarises the inferences over the linear combinations, \texttt{Comb\_results}. \texttt{Comb\_results} is a list with two fields, \texttt{mu} (the expectation of the estimate) and \texttt{cov} (the covariance of the estimate). For this simple analysis we get
+
+<<Results_comb2>>=
+print(Results_linear_comb$Comb_results)
+@
+
+which indicates that we estimate a mass balance of +178 $\pm$ 62 Gt yr $^{-1}$ for 2005 and 8 $\pm$ 61 Gt yr$^{-1}$ for 2007. These values are unrealistically high for the years considered, this is predominantly due to lack of data at the main glacier outlets where most height loss is occurring.
+
+\section{Conclusion}
+
+In this vignette we have considered the modelling and inference of a very simple spatio-temporal process from satellite data. In the next vignette we will analyse the case where we have multiple interacting spatio-temporal processes and observations with a large spatial footprint.
+
+% # ### Consideration of multi-variate processes
+% # ### Consideration of covariates
+% # ### Consider of spatial + spatio-temporal process
+% # ### A few words on inference
+
+
+\bibliography{mvst}
+
+\end{document}
