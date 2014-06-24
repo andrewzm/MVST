@@ -268,15 +268,17 @@ setGeneric("Infer", function(Graph,...) standardGeneric("Infer"))
 #' Odiff <- setalpha(O,0.1,av_dist=2)
 setGeneric("setalpha", function(.Object,alpha,av_dist) standardGeneric("setalpha"))
 
+#' @export
+setGeneric("setGMRF", function(Graph,obj) standardGeneric("setGMRF"))
+
 setGeneric(".exist", function(L,to,from) standardGeneric(".exist"))
 setGeneric("getData", function(.Object) standardGeneric("getData"))
 setGeneric("getC",function(.Object) standardGeneric("getC"))
-setGeneric("setGMRF", function(Graph,obj) standardGeneric("setGMRF"))
 setGeneric("validate", function(Results,G,sim_obs=F,...) standardGeneric("validate"))
 setGeneric("pred_variance_large", function(Results,G) standardGeneric("pred_variance_large"))
 setGeneric("split_validation", function(.Object,samples,common,...) standardGeneric("split_validation"))
 setGeneric("sample_GMRF", function(G,L=NULL,reps=1,P=NULL) standardGeneric("sample_GMRF"))
 setGeneric("basisinterp", function(G,s,weights) standardGeneric("basisinterp"))
 setGeneric(".extractClass", function(L,Cl) standardGeneric(".extractClass"))
-setGeneric(".find_inc_matrix", function(basis,obs,...) standardGeneric(".find_inc_matrix"))
+setGeneric(".find_inc_matrix",  function(basis,obs,mulfun, mask, n_grid) standardGeneric(".find_inc_matrix"))
 

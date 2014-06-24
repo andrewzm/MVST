@@ -28,6 +28,14 @@ RBF_filter <- function(data,si,varname="z",smooth_var=800^2) {
   return(si[varname][,1])
 }
 
+#' @title Find length scales by fitting a Matern
+#' @description Takes a spatial or spatio-temporal data set and returns spatial and temporal length scales by finding the maximum likelihood
+#' on a pre-specified grid. If the data is spatio-temporal a separable covariance structure is assumed.
+#' @param data a data frame with fields \code{x}, \code{y} and an output variable \code{z}. The time coordinate \code{t} is optional.
+#' @param rho an array of spatial practical ranges to consider.
+#' @param nu an array of smoothness parameters to consider.
+#' @param var an array of marginal variances to consider
+#' @param theta an array of first-order auto-regressive parameters to consider in the model \eqn{x_{t+1} = \theta x_{t} + e_{t}}.
 #' @export
 lscale_from_Matern  <- function(data,rho=100,nu=3/2,var=1,theta = seq(-0.99,0.99,0.33)) {
   marg_spat <- matrix(0,length(rho),length(var))

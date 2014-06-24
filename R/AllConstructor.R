@@ -664,11 +664,12 @@ setMethod("initialize",signature(.Object="link"), function(.Object,from=new("blo
   return(.Object)
 })
 
-setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new("process"),to=new("Obs"),...) {
+setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new("process"),to=new("Obs"),
+                                                                n_grid = NULL,Cmat = NULL, mul_factor = NULL, 
+                                                                mulfun = NULL, mask = NULL) {
   
-  args <- list(...)
-  if("Cmat" %in% names(args)) {
-    .Object@Cmat <- args$Cmat
+  if(!is.null(Cmat)) {
+      .Object@Cmat <- Cmat
   } else {
     if(class(from@Basis) == "FEBasis") {
       t_axis <- from@G@t_axis
@@ -685,8 +686,7 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
       if(!(round(nvariates) == nvariates)) stop("Stopping: Cannot calculate number of variates. Are they on the same basis?")
       if(nvariates < 1) stop("Stopping: Cannot calculate number of variates")
       if(nvariates > 1) cat("Multi-variate system detected",sep="\n")
-      if("mul_factor" %in% names(args)) {
-        mul_factor <- args$mul_factor
+      if(!(is.null(mul_factor))) {
         if(!(length(mul_factor) == nvariates)) stop("Need as many mul_factors as variates")
       } else {
         mul_factor <- rep(1,nvariates)
@@ -706,7 +706,7 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
         if(nrow(to_sub)==0) {  # if no data points at this time point
           Cmats[[i]] <- matrix(0,0,n)  # create empty matrix
         } else {
-          Cmats[[i]] <- .find_inc_matrix(from@Basis,to_sub,...) # otherwise compute the matrix
+          Cmats[[i]] <- .find_inc_matrix(from@Basis,to_sub,mulfun = mulfun, mask = mask, n_grid = n_grid) # otherwise compute the matrix
         }
         C <- Cmats[[i]]  # store incidence matrix at this time point
         

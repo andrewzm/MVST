@@ -227,9 +227,7 @@ setMethod("validate",signature(Results="matrix",G="Graph"),function(Results,G,si
 
 
 
-setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,...) { 
-  args <- list(...)
-  
+setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mulfun = NULL, mask = NULL, n_grid=NULL) { 
   
   P <- Imat(nrow(obs))
   if (is(obs,"Obs"))
@@ -249,19 +247,14 @@ setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,..
                 list(obs@df$x,obs@df$y),method="C")
     
   } else if(class(obs) ==  "Obs_poly") {
-    if ("n_grid" %in% names(args)) {
-      n_grid <- args$n_grid
-    } else {
+    if(is.null(n_grid)) {
       warning("n_grid not specified, defaulting to a grid of 400 points for integration over footprints")
       n_grid <- 400
     }
     
     
-    if ("mulfun" %in% names(args)) {
-      mulfun <- args$mulfun
-    } else {
-      mulfun <- 1 
-    }
+    if (is.null(mulfun))  mulfun <- 1
+      
     C <- md5_wrapper(FindC_polyaverage,
                      basis@pars$p,
                      basis@pars$t,
@@ -271,9 +264,9 @@ setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,..
                      ds=n_grid,
                      mulfun=mulfun)
     
-    if ("mask" %in% names(args)) {
-      if(!(args$mask %in% names(getDf(basis)))) stop("Cannot find mask field in basis")
-      C[,which(!basis[args$mask])] <- 0 
+    if (!(is.null(mask))) {
+      if(!(mask %in% names(getDf(basis)))) stop("Cannot find mask field in basis")
+      C[,which(!basis[mask])] <- 0 
     }
     
     
@@ -421,7 +414,12 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
 #' there is no basis set associated with the GMRF, then the incidence matrix needs to be specified manually.
 #' @param Obj1 object of class \code{process}.
 #' @param Obj2 object of class \code{Obs}.
-#' @param ... to be specified...
+#' @param Cmat the matrix mapping the process to the observation. Needs to be specified if no basis function set is assoicated with the process.
+#' @param mul_factor a constant with which to scale the process, i.e. \eqn{y = mul_factor * C * x}
+#' @param mulfun  as above, but a possibly spatially varying amplification of the process of the observation. This, for example, could be a spatially-varying
+#' density function when converting height to mass. 
+#' @param n_grid the number of grid points to use when integrating over the process with an observation of a large footprint. Defaults to a 400 x 400 grid.
+#' @param mask the label of a process attribute. The observation is assumed to only be influenced by the process where this attribute is set to 1.
 #' @return Object of class \code{linkGO}, a link between a GMRF and an observation.
 #' @keywords link, incidence matrix
 #' @export
@@ -452,10 +450,13 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
 #'
 #' L1 <- link(SURF,icesat_obs)
 #' }
-link <- function(Obj1,Obj2,...) {
+link <- function(Obj1,Obj2,Cmat = NULL, mul_factor = NULL, mulfun = NULL,
+                 n_grid = NULL, mask = NULL) {
   if (is(Obj1,"process") & is(Obj2,"Obs"))
   {
-    .Object <- new("linkGO",from=Obj1,to=Obj2,...)
+    .Object <- new("linkGO",from=Obj1,to=Obj2,Cmat = Cmat,
+                   mul_factor = mul_factor,  mulfun = mulfun,  
+                   n_grid = n_grid, mask = mask)
   } else stop("Invalid object specification") 
   
   return(.Object)

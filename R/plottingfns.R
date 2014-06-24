@@ -267,6 +267,8 @@ DrawfromVoronoi <- function(Voronoi,col,p) {
     polygon(unname(edges[,1]),unname(edges[,2]),col=col[i],border='NA')
   }
 }
+
+#' @export
 LinePlotTheme <- function() {
   g <- ggplot() + theme(panel.background = element_rect(fill='white', colour='black'),text = element_text(size=20),
                         panel.grid.major =  element_line(colour = "light gray", size = 0.05),
@@ -274,6 +276,8 @@ LinePlotTheme <- function() {
                         plot.margin=unit(c(0,0,0,0),"mm")) 
   return (g)
 }
+
+#' @export
 EmptyTheme <- function() {
   g <- ggplot() +  theme(panel.background = element_rect(fill='white', colour='white'),panel.grid=element_blank(),axis.ticks=element_blank(),
                          panel.grid.major=element_blank(),panel.grid.minor=element_blank(),axis.text.x=element_blank(),axis.text.y=element_blank())
