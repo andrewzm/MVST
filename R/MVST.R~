@@ -40,7 +40,6 @@
 #' @importFrom matlab linspace logspace meshgrid
 #' @importFrom actuar dinvgamma rinvgamma qinvgamma
 #' @importFrom igraph graph.adjacency graph.bfs
-#' @export md5_wrapper
 #' @name MVST
 NULL
 

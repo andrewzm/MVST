@@ -1,3 +1,137 @@
+#' @title RBF filter
+#' @description Takes a 2-D set of disaggregated points and smooths them out by placing a radial basis function at each point and using
+#' least-squares estimation for the ensuing weights. The constant trend is added on at the end.
+#' @param data a data frame with fields \code{x}, \code{y} and an output variable.
+#' @param si data frame containing fields \code{x} and \code{y} which denote the desired coordinates of the output field (typically a grid).
+#' @param varname the label of the column in \code{data} to use as the output variable.
+#' @param smooth_var the variance of the radial basis function.
+#' @return the smoothed field  values at locations in \code{si}
+#' @export
+#' @examples 
+#' data <- data.frame(x = c(1,1,2,2),y = c(1,2,1,2), z = c(1,2,3,4))
+#' si <- as.data.frame(expand.grid(seq(0,3,by=0.1),seq(0,3,by=0.1)))
+#' names(si) <- c("x","y")
+#' si$z <- RBF_filter(data,si,varname="z",smooth_var=1)
+RBF_filter <- function(data,si,varname="z",smooth_var=800^2) {
+  kernel_smooth_var <- smooth_var
+  D <- rdist(data[c("x","y")],data[c("x","y")])
+  A <- my_RBF(D,mu=matrix(0,1,2),A=1,sigma2=kernel_smooth_var)
+  z <- data[varname][,1]
+  data$RBFw <- solve(A)%*%(z - mean(z))
+  si[varname] <-  0
+  for(i in 1:nrow(data)) {
+    r <- rdist(cbind(si$x,si$y),matrix(c(data$x[i],data$y[i]),1,2))
+    si[varname] <- si[varname] + my_RBF(r,A=data$RBFw[i],sigma2=kernel_smooth_var)
+  }    
+  
+  si[varname] <- si[varname]  + mean(z)
+  return(si[varname][,1])
+}
+
+#' @export
+lscale_from_Matern  <- function(data,rho=100,nu=3/2,var=1,theta = seq(-0.99,0.99,0.33)) {
+  marg_spat <- matrix(0,length(rho),length(var))
+  marg_temp <- NULL
+  spat_result_frame <- temp_result_frame <- NULL
+  dist_space <- list()
+  dist_time <- list()
+  
+  if(!("t" %in% names(data))) {
+    data$t = 0
+  }
+  
+  dist_space <- dlply(data,"t",function(df) {   
+    if ("y" %in% names(df)) {
+      dd<- rdist(df[c("x","y")],df[c("x","y")])
+    } else {
+      dd<- rdist(df["x"],df["x"])
+    }  
+    return(dd)
+    
+  })
+  
+  dist_time <- dlply(data,.("x","y"),function(df) {   
+    dd<- rdist(df["t"],df["t"])
+    return(dd)
+  })
+  
+  t_axis <- seq_along(unique(data$t))
+  tt <- unique(data$t)
+  L_norm <-  marg1_norm <- marg2_norm <- list()
+  for(k in 1:length(nu)) {
+    nu_sel <- nu[k]
+    for(i in 1:length(rho)) {
+      kappa = kappa_from_l(rho[i],nu_sel)
+      for(h in t_axis) {
+        sub_data <- subset(data, t == tt[h])
+        K_norm <- my_Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
+        diag(K_norm) <- 1
+        L_norm[[h]] <- chol(K_norm) # Cholesky of normalised covariance matrix
+        Kinv_norm <- chol2inv(L_norm[[h]]) # normalised precision matrix
+        marg1_norm[[h]] <-  t(sub_data$z)%*%Kinv_norm%*%sub_data$z
+        marg2_norm[[h]] <-  logdet(L_norm[[h]])
+      }
+      for(j in 1:length(var)) {
+        #Kinv <- Kinv_norm/var[j]    
+        #marg[i,j] <- -0.5*t(data$z)%*%Kinv%*%data$z - 0.5*logdet(sqrt(var[j])*L_norm)
+        for(h in t_axis)
+          marg_spat[i,j] <- marg_spat[i,j] -0.5*marg1_norm[[h]]/var[j] - 0.5*(nrow(L_norm[[h]]))*log(var[j]) - 0.5*marg2_norm[[h]]
+      }
+      
+      
+      #           for(j in 1:length(var))
+      #           for(h in t_axis) {
+      #             sub_data <- subset(data, t == tt[h])
+      #             K <- var[j]*my_Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
+      #             diag(K) <- diag(K)*2
+      #             L <- chol(K) # Cholesky of normalised covariance matrix
+      #             Kinv <- chol2inv(L) # normalised precision matrix
+      #             marg1_norm <-  t(sub_data$z)%*%Kinv%*%sub_data$z
+      #             marg2_norm <-  logdet(L)
+      #             marg[i,j] <- marg[i,j] -0.5*marg1_norm - 0.5*marg2_norm
+      #           }
+    }
+    rho_max_ind <- which.max(apply(marg_spat,1,max))
+    var_max_ind <- which.max(apply(marg_spat,2,max))
+    if((rho_max_ind %in% c(1,length(rho)) )| (var_max_ind %in% c(1,length(var))) ) {
+      cat(paste("Warning: reached search boundary for nu = ",nu_sel,sep=""),sep="\n"); flush.console()
+    }
+    spat_result_frame <- rbind(spat_result_frame,data.frame(lscale = rho[rho_max_ind],var = var[var_max_ind], nu = nu_sel, lk = max(marg_spat)))
+  }
+  
+  if(length(t_axis)>1) {
+    marg_temp <- matrix(0,length(theta),length(var)+2)
+    for (i in 1:length(theta)) {
+      marg_temp[i,] <- as.vector(colSums(ddply(data,c("x","y"), function(df) {
+        time_dist <- rdist(df$t,df$t)
+        diag(time_dist) <- 0
+        K_norm <- theta[i]^time_dist
+        L_norm <- chol(K_norm)
+        Kinv_norm <- chol2inv(L_norm) 
+        marg1_norm <-  t(df$z)%*%Kinv_norm%*%df$z
+        marg2_norm <-  logdet(L_norm)
+        X <- rep(0,length(var))
+        for(j in 1:length(var)) {
+          X[j] <- -0.5*marg1_norm/var[j] - 0.5*nrow(L_norm)*log(var[j]) - 0.5*marg2_norm
+        }
+        return(t(matrix(X)))
+      })))
+    }
+    marg_temp <- marg_temp[,-(1:2)]
+    theta_max_ind <- which.max(apply(marg_temp,1,max))
+    var_max_ind <- which.max(apply(marg_temp,2,max))
+    if((theta_max_ind %in% c(1,length(theta)) )| (var_max_ind %in% c(1,length(var))) ) {
+      cat(paste("Warning: reached search boundary for temporal correlation",sep=""),sep="\n"); flush.console()
+    }
+    # Attach on the temporal bit
+    temp_result_frame <- rbind(temp_result_frame,data.frame(lscale = theta[theta_max_ind],var = var[var_max_ind], nu = NA, lk = max(marg_temp)))
+    
+  }
+  
+  return(list(spat_df = spat_result_frame,temp_df = temp_result_frame,marg_spat=marg_spat,marg_temp = marg_temp))
+  
+}
+
 FreqAnal2D <- function(locs,x,theta.grid=0,smoothness = 5/2,d = seq(-5,5,0.1),dither = T,plotit=F) {
 
   if (class(locs) == "list") {
@@ -26,8 +160,9 @@ FreqAnal2D <- function(locs,x,theta.grid=0,smoothness = 5/2,d = seq(-5,5,0.1),di
   f_rho2 = fs_rho * (0 : (N_rho2-1)) / N_rho2
 
 
-  D <- meshgrid(d1,d2)
-  D <- cbind(c(D$x),c(D$y))
+  #D <- meshgrid(d1,d2)
+  #D <- cbind(c(D$x),c(D$y))
+  D <- as.matrix(expand.grid(d1,d2))
   r <- apply(D,1,function(x) {sqrt(x[1]^2 + x[2]^2) } )     # find radial distance from origin of every point
 
   x <- apply(x,2,function(x) {x - mean(x)})   # detrend signal       
@@ -72,22 +207,6 @@ FreqAnal2D <- function(locs,x,theta.grid=0,smoothness = 5/2,d = seq(-5,5,0.1),di
   
   return(fit)
 }
-# RBF filter
-RBF_filter <- function(data,si,varname="z",smooth_var=800^2) {
-  kernel_smooth_var <- smooth_var
-  D <- rdist(data[c("x","y")],data[c("x","y")])
-  A <- my_RBF(D,mu=matrix(0,1,2),A=1,sigma2=kernel_smooth_var)
-  z <- data[varname][,1]
-  data$RBFw <- solve(A)%*%(z - mean(z))
-  si[varname] <-  0
-  for(i in 1:nrow(data)) {
-    r <- rdist(cbind(si$x,si$y),matrix(c(data$x[i],data$y[i]),1,2))
-    si[varname] <- si[varname] + my_RBF(r,A=data$RBFw[i],sigma2=kernel_smooth_var)
-  }    
-  
-  si[varname] <- si[varname]  + mean(z)
-  return(si[varname][,1])
-}
 
 ## Find 2D Power Spectrum
 PS2D <- function(s1,s2,x) {
@@ -96,11 +215,11 @@ PS2D <- function(s1,s2,x) {
   ds <- mean(diff(s1))
   fs <- 1/ds
 
-  S = meshgrid(s1,s2)
+  #S = meshgrid(s1,s2)
   X <- fft(x*ds)
   f1 = fs * (0 : (N1-1)) / N1
   f2 = fs * (0 : (N2-1)) / N2
-  f_grid <- meshgrid(f1,f2)
+  #f_grid <- meshgrid(f1,f2)
   PS = abs(X)^2
   return(list(f1 = f1,f2 = f2, PS = PS))
 }
@@ -171,106 +290,5 @@ PS2D <- function(s1,s2,x) {
       th <- min(D_mean[,2])+diff(range(D_mean[,2]))*0.9
       return(which(D_mean[,2]>th)[1]*break_diff)
   }
-lscale_from_Matern  <- function(data,rho=100,nu=3/2,var=1,theta = seq(-0.99,0.99,0.33)) {
-      marg_spat <- matrix(0,length(rho),length(var))
-      marg_temp <- NULL
-      spat_result_frame <- temp_result_frame <- NULL
-      dist_space <- list()
-      dist_time <- list()
-	  
-      if(!("t" %in% names(data))) {
-       data$t = 0
-      }
-      
-      dist_space <- dlply(data,"t",function(df) {   
-        if ("y" %in% names(df)) {
-          dd<- rdist(df[c("x","y")],df[c("x","y")])
-        } else {
-          dd<- rdist(df["x"],df["x"])
-        }  
-        return(dd)
-        
-        })
-      
-      dist_time <- dlply(data,.("x","y"),function(df) {   
-          dd<- rdist(df["t"],df["t"])
-        return(dd)
-      })
-      
-      t_axis <- seq_along(unique(data$t))
-      tt <- unique(data$t)
-      L_norm <-  marg1_norm <- marg2_norm <- list()
-      for(k in 1:length(nu)) {
-        nu_sel <- nu[k]
-        for(i in 1:length(rho)) {
-           kappa = kappa_from_l(rho[i],nu_sel)
-          for(h in t_axis) {
-            sub_data <- subset(data, t == tt[h])
-            K_norm <- my_Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
-            diag(K_norm) <- 1
-            L_norm[[h]] <- chol(K_norm) # Cholesky of normalised covariance matrix
-            Kinv_norm <- chol2inv(L_norm[[h]]) # normalised precision matrix
-            marg1_norm[[h]] <-  t(sub_data$z)%*%Kinv_norm%*%sub_data$z
-            marg2_norm[[h]] <-  logdet(L_norm[[h]])
-          }
-          for(j in 1:length(var)) {
-            #Kinv <- Kinv_norm/var[j]    
-            #marg[i,j] <- -0.5*t(data$z)%*%Kinv%*%data$z - 0.5*logdet(sqrt(var[j])*L_norm)
-            for(h in t_axis)
-              marg_spat[i,j] <- marg_spat[i,j] -0.5*marg1_norm[[h]]/var[j] - 0.5*(nrow(L_norm[[h]]))*log(var[j]) - 0.5*marg2_norm[[h]]
-          }
-          
-          
-#           for(j in 1:length(var))
-#           for(h in t_axis) {
-#             sub_data <- subset(data, t == tt[h])
-#             K <- var[j]*my_Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
-#             diag(K) <- diag(K)*2
-#             L <- chol(K) # Cholesky of normalised covariance matrix
-#             Kinv <- chol2inv(L) # normalised precision matrix
-#             marg1_norm <-  t(sub_data$z)%*%Kinv%*%sub_data$z
-#             marg2_norm <-  logdet(L)
-#             marg[i,j] <- marg[i,j] -0.5*marg1_norm - 0.5*marg2_norm
-#           }
-        }
-        rho_max_ind <- which.max(apply(marg_spat,1,max))
-        var_max_ind <- which.max(apply(marg_spat,2,max))
-        if((rho_max_ind %in% c(1,length(rho)) )| (var_max_ind %in% c(1,length(var))) ) {
-          cat(paste("Warning: reached search boundary for nu = ",nu_sel,sep=""),sep="\n"); flush.console()
-        }
-        spat_result_frame <- rbind(spat_result_frame,data.frame(lscale = rho[rho_max_ind],var = var[var_max_ind], nu = nu_sel, lk = max(marg_spat)))
-      }
-   
-      if(length(t_axis)>1) {
-        marg_temp <- matrix(0,length(theta),length(var)+2)
-        for (i in 1:length(theta)) {
-          marg_temp[i,] <- as.vector(colSums(ddply(data,c("x","y"), function(df) {
-            time_dist <- rdist(df$t,df$t)
-            diag(time_dist) <- 0
-            K_norm <- theta[i]^time_dist
-            L_norm <- chol(K_norm)
-            Kinv_norm <- chol2inv(L_norm) 
-            marg1_norm <-  t(df$z)%*%Kinv_norm%*%df$z
-            marg2_norm <-  logdet(L_norm)
-            X <- rep(0,length(var))
-            for(j in 1:length(var)) {
-              X[j] <- -0.5*marg1_norm/var[j] - 0.5*nrow(L_norm)*log(var[j]) - 0.5*marg2_norm
-            }
-            return(t(matrix(X)))
-          })))
-        }
-        marg_temp <- marg_temp[,-(1:2)]
-        theta_max_ind <- which.max(apply(marg_temp,1,max))
-        var_max_ind <- which.max(apply(marg_temp,2,max))
-        if((theta_max_ind %in% c(1,length(rho)) )| (var_max_ind %in% c(1,length(var))) ) {
-          cat(paste("Warning: reached search boundary for temporal correlation",sep=""),sep="\n"); flush.console()
-        }
-        # Attach on the temporal bit
-        temp_result_frame <- rbind(temp_result_frame,data.frame(lscale = theta[theta_max_ind],var = var[var_max_ind], nu = NA, lk = max(marg_temp)))
-        
-      }
-      
-      return(list(spat_df = spat_result_frame,temp_df = temp_result_frame,marg_spat=marg_spat,marg_temp = marg_temp))
 
-    }
  

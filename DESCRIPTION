@@ -13,7 +13,7 @@ Depends:
 Suggests:
     reshape2,
     shapefiles,
-	knitr
+    knitr
 Imports:
     Matrix,
     linalg,

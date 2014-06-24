@@ -177,10 +177,16 @@ Random_graph <- function(num_v,lambda) {
   return(neighb)
 }
 
-## Return neighb list from precision structure
+#' @title Return neighb list from precision structure
+#' @description Takes a precision matrix and returns a list of vectors, where the \code{i}th vector contains \code{i} and the indices of the neighbours of the \code{i}th variable.
+#' @param Q a sparse matrix
+#' @return a list of vectors as described in the description
+#' @examples
+#' G <- GMRF_RW()
+#' nlist <- neighb_from_prec(getPrecision(G))
 neighb_from_prec <- function(Q) {
   n <- dim(Q)[1]
-  return(apply(matrix(1:n),1,function(x) { return(which(Q[x,]>0))}))
+  apply(matrix(1:n),1,function(x) { return(which(!(Q[x,]==0)))})
 }
 
 

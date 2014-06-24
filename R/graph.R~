@@ -25,6 +25,22 @@ setMethod("pred_variance_large",signature(Results="list",G="Graph"),function(Res
 })
 
 
+setMethod("pred_variance_large",signature(Results="matrix",G="Graph"),function(Results,G) {
+  
+  Olist <- .extractClass(G@v,"Obs")
+  Glist <- .extractClass(G@v,"process")
+  
+  C_full <- G@e[[1]]@Cmat
+  Qobs <- getPrecision(Olist[[1]])
+  
+  x_mean <- apply(x_samp,1,mean)
+  Olist[[1]]["pred_mean"] <- as.vector(C_full %*% x_mean)
+  Olist[[1]]["pred_var"] <- apply((C_full %*% Results),1,var)
+  
+  return(Olist[[1]])  
+})
+
+
 setMethod("validate",signature(Results="list",G="Graph"),function(Results,G,sim_obs=F,...) {
   
   args <- list(...)
@@ -61,7 +77,9 @@ setMethod("validate",signature(Results="list",G="Graph"),function(Results,G,sim_
      cat("Doing Cholesky decomposition",sep="\n")
      X <- cholPermute(Qtot,matlab_server=matlab_server)
   }
+  cat("Finding C %*% Sigma. This will take a while...",sep="\n")
   mm <- t(cholsolve(Qtot,t(C_full_test),perm=T,cholQp = X$Qpermchol, P = X$P))
+  cat("Computing C %*% Sigma complete ...",sep="\n")
   var1 <- rowSums(mm*C_full_test)
   Sigma1 <- mm %*% t(C_full_test)   # Sigma1 is the variance due to the process
   
@@ -119,6 +137,96 @@ setMethod("validate",signature(Results="list",G="Graph"),function(Results,G,sim_
   val_results$DPC <- as.numeric(solve(G,(y_test$z - y_pred_mean)))
   return(val_results)
 })
+
+
+setMethod("validate",signature(Results="matrix",G="Graph"),function(Results,G,sim_obs=F,...) {
+  
+  args <- list(...)
+  
+  Olist <- .extractClass(G@v,"Obs")
+  Glist <- .extractClass(G@v,"process")
+  
+  C_full_test <- G@e[[1]]@Cmat
+  Qobs_test <- getPrecision(Olist[[1]])
+  
+  x_mean <- apply(x_samp,1,mean)
+  b_test <- Olist[[1]]@df$fine_scale
+  #    batch_size <- 500
+  #    nbatches <- ceiling(nrow(C_full_test)/batch_size)
+  #    fun <- function(jj,C,X,Q,batch_size=1000) { 
+  #      this_batch <- ((jj-1)*batch_size+1):(min(jj*batch_size,nrow(C)))
+  #      mm <- t(cholsolve(Q,t(C[this_batch,]),perm=T,cholQp = X$Qpermchol, P = X$P))  # A backsolve is a transposed forward solve ...
+  #      vv <- rowSums(mm*C[this_batch,])
+  #      return(vv)      }
+  
+  if("matlab_server" %in% args) {
+    matlab_server <- args$matlab_server
+  } else {
+    matlab_server <- NULL
+  }
+  
+  cat("Finding C %*% Sigma. This will take a while...",sep="\n")
+  Results_detrended <- Results - matrix(x_mean,nrow(Results),ncol(Results))
+  Sigma1 <- (C_full_test %*% Results_detrended) %*% t(C_full_test %*% Results_detrended)/(ncol(Results)-1)
+  var1 <-  diag(Sigma1)
+  
+  # check
+  #S <- chol2inv(chol(Qtot))
+  #Sigma1 <- C_full_test %*% S %*% t(C_full_test)
+  # CHECK PASSED
+  
+  #var2 <-  1/as.vector(prec_delta * exp(-b_test*eta + b_test^2*var_eta_post/2))
+  #Sigma2 <- diag(var2)  # Sigma2 is the variance due to the small-scale variation
+  
+  var2 = 0
+  Sigma2 <- Zeromat(nrow(Sigma1))
+  
+  var3 <- (1/diag(Qobs_test))  # Sigma2 is the variance due to the observations
+  Sigma3 <- sparsediag(var3)
+  
+  y_test <- getDf(Olist[[1]])
+  if(sim_obs) {
+    y_test$z <- as.numeric(C_full_test%*%x_mean + t(chol(forceSymmetric(Sigma1 + Sigma2 + Sigma3))) %*% rnorm(nrow(Qobs_test)) )
+  }
+  
+  y_pred_mean <- C_full_test %*% matrix(x_mean)
+  y_pred_var <- var1 + var2 + var3
+  
+  val_results <- y_test
+  val_results$y_pred_mean <- as.numeric(y_pred_mean)
+  val_results$var1 <- var1
+  val_results$var2 <- var2
+  val_results$var3 <- var3
+  val_results$RMS <- as.vector((y_test$z - y_pred_mean)^2)*diag(Qobs_test)
+  val_results$PMCC <- as.vector((y_test$z - y_pred_mean)^2 + (y_pred_var))
+  val_results$CR1 <- as.vector((y_test$z - y_pred_mean)/sqrt(y_pred_var))   # CR1 is the standardised error
+  val_results$CR2 <- sqrt(as.vector((y_test$z - y_pred_mean)^2/(y_pred_var)))
+  
+  
+  # Compute Mahalnobis distance (See notes and Bastos and OHagan)
+  val_results$Mahalanobis <- as.numeric(t(y_test$z - y_pred_mean) %*% chol2inv(chol(forceSymmetric(Sigma1 + Sigma2 + Sigma3))) %*% (y_test$z - y_pred_mean))
+  
+  # Eigen errors
+  X <- eigen(Sigma1 + Sigma2 + Sigma3)
+  G <- X$vectors %*% diag(sqrt(X$values))
+  val_results$DE <- as.numeric(solve(G,(y_test$z - y_pred_mean)))
+  
+  # Pivoted Chol errors
+  #   X <- find_pivot_Bastos(Sigma1+Sigma2+Sigma3)
+  #   R <- X$R
+  #   pivot <- X$piv
+  #   P <- sparseMatrix(i=pivot,j=1:length(pivot),x=1)
+  R <- chol(as(Sigma1+Sigma2+Sigma3,"matrix"),pivot=T)
+  
+  pivot <- attr(R,"pivot")
+  P <- sparseMatrix(i=pivot,j=1:length(pivot),x=1)
+  G <- P %*% t(R)
+  val_results$DPC <- as.numeric(solve(G,(y_test$z - y_pred_mean)))
+  return(val_results)
+})
+
+
+
 setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,...) { 
   args <- list(...)
   
@@ -162,8 +270,9 @@ setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,..
                      method="C",
                      ds=n_grid,
                      mulfun=mulfun)
+    
     if ("mask" %in% names(args)) {
-      if(!(args$mask %in% names(basis))) stop("Cannot find mask field in basis")
+      if(!(args$mask %in% names(getDf(basis)))) stop("Cannot find mask field in basis")
       C[,which(!basis[args$mask])] <- 0 
     }
     
@@ -257,6 +366,7 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
                 Qtot <- t(C_full)%*%Qobs%*%C_full + Q_full 
                 cat("Doing Cholesky and Takahashi",sep="\n")
                 X <- cholPermute(Qtot,matlab_server=matlab_server)
+               
                 x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
                 if(!("Comb" %in% names(args))) {
                   # Standard Gaussian update
@@ -509,13 +619,17 @@ FindC_polyaverage  <- function(p,tri,polygons,plotit=F,mulfun = 0,method="R",ds=
     tris_to_consider <- which(apply(tri,1,function(x) any(x %in% pnts_to_consider)))
     tris <- tri[tris_to_consider,]
     
-    x_grid <- linspace(min(pv[,1]),max(pv[,1]),ds)
-    y_grid <- linspace(min(pv[,2]),max(pv[,2]),ds)
+    x_grid <- seq(min(pv[,1]),max(pv[,1]),length=ds)
+    y_grid <- seq(min(pv[,2]),max(pv[,2]),length=ds)
     dx <- mean(diff(x_grid))
     dy <- mean(diff(y_grid))
-    GRID <- meshgrid(x_grid,y_grid)
-    x <- as.vector(GRID$x)
-    y <- as.vector(GRID$y)
+    #GRID <- meshgrid(x_grid,y_grid)
+    #x <- as.vector(GRID$x)
+    #y <- as.vector(GRID$y)
+    GRID <- expand.theta(y_grid,x_grid)
+    x <- GRID[,2]
+    y <- GRID[,1]
+
     xy_in_poly <- pnt.in.poly(cbind(x,y),pv)$pip
     x <- x[which(xy_in_poly == 1)]
     y <- y[which(xy_in_poly == 1)]

@@ -12,7 +12,6 @@
 #' @export
 preprocess_obs <- function(Obs.obj,std_lim=NA,abs_lim=NA,avr_method=NA,box_size=10,min_pts=4,...) {
   
-  
   if(!(is.na(std_lim))) {
     stopifnot(is.numeric(std_lim))
     Obs.obj@df <- subset(Obs.obj@df,std < std_lim)
@@ -36,6 +35,7 @@ preprocess_obs <- function(Obs.obj,std_lim=NA,abs_lim=NA,avr_method=NA,box_size=
     breaksy <- seq(min(Obs.obj@df$y)-1,max(Obs.obj@df$y)+1,by=box_size)
     Obs.obj@df$box_x <- cut(Obs.obj@df$x,breaksx,labels=F)
     Obs.obj@df$box_y <- cut(Obs.obj@df$y,breaksy,labels=F) 
+    
     
     averaging_fun <- function(z) {
       x <- z[1]  
@@ -66,15 +66,14 @@ preprocess_obs <- function(Obs.obj,std_lim=NA,abs_lim=NA,avr_method=NA,box_size=
     Obs.obj@df$z <- Obs.obj@df$z2
     Obs.obj@df$z2 <- NULL
     
-    
-    
     Obs.obj@df <- arrange(Obs.obj@df,t)
     Obs.obj@n <- 1:nrow(Obs.obj@df)
   }  
   return(Obs.obj)
 }
 
-
+#' @rdname setalpha
+#' @aliases setalpha,Obs-method
 setMethod("setalpha",signature(.Object="Obs"),
           function(.Object,alpha,av_dist) {
             .Object@args$alpha0 <- alpha
@@ -83,7 +82,22 @@ setMethod("setalpha",signature(.Object="Obs"),
             return(.Object)          })
 
 
-
+#### GENERIC FUNCTIONS ######
+#' @title Split data into training/testing groups
+#' @description \code{split_validation} takes an object of class \code{Obs} and returns a list of two objects of class \code{Obs}, where one object
+#' contains the training data and the other contains the validation data. If the data is spatio-temporal, the validation data can be chosen to be 
+#' co-located in space.
+#' @param .Object an object of class \code{Obs}.
+#' @param samples an integer identifying the number of observations to use for validation.
+#' @param common a flag which, if 1, indicates that validation data should be chosen to coincide spatially. This flag is not relevant if the
+#' data is not spatio-temporal.
+#' @param ... further arguments passed on to \code{subset}.
+#' @return a list of two objects of class \code{Obs}.
+#' @export
+#' @examples 
+#' data(icesat)
+#' icesat_obs <- Obs(df=icesat)
+#' O2 <- split_validation(icesat_obs,100,common=0, t > 0)
 setMethod("split_validation",signature = "Obs",function(.Object,samples,common=0,...) {
   y_tot <- getDf(.Object)
   y_tot$n <- 1:nrow(y_tot)
@@ -201,25 +215,6 @@ Load_data <- function(thinning = 1,     # how much we thin grounding and shapefi
   
 }
 
-Find_Smooth_mat <- function(df,alpha0,av_dist=450){
-  m <- nrow(df)
-  if(alpha0 == 0) {
-    return(Imat(m)) 
-  } else {
-    
-    D <- fields::fields.rdist.near(cbind(df$x,df$y),cbind(df$x,df$y),delta=av_dist)
-    X2 <- sparseMatrix(i=D$ind[,1],j=D$ind[,2],x=D$ra) 
-    P <- sparseMatrix(i=D$ind[,1],j=D$ind[,2],x=alpha0) 
-    diag(P) <- apply(P,1,function(x) 1 - sum(x) + alpha0)
-    P <- as(P,"dgTMatrix")
-    dense_obs <- which(diag(P) < 0.1)
-    for (i in dense_obs) {
-      indices <- which((P@i + 1) ==i)
-      P@x[indices] <- 1/length(indices)
-    }
-  }
-  return(P)}
-
 #' Extract roughness from topography
 #'
 #' Supplied with a data frame with fields x, y and z, this function bins the data into boxes of length \code{ds} and returns a data frame where \code{z} is now the estimated roughness, given by the lof of the standard deviation of the topography in the boxes.
@@ -270,6 +265,25 @@ roughness_from_topo <- function(df,ds=20) {
   return(df)
 }
 
+
+
+Find_Smooth_mat <- function(df,alpha0,av_dist=450){
+  m <- nrow(df)
+  if(alpha0 == 0) {
+    return(Imat(m)) 
+  } else {
+    D <- fields::fields.rdist.near(cbind(df$x,df$y),cbind(df$x,df$y),delta=av_dist)
+    X2 <- sparseMatrix(i=D$ind[,1],j=D$ind[,2],x=D$ra) 
+    P <- sparseMatrix(i=D$ind[,1],j=D$ind[,2],x=alpha0) 
+    diag(P) <- apply(P,1,function(x) 1 - sum(x) + alpha0)
+    P <- as(P,"dgTMatrix")
+    dense_obs <- which(diag(P) < 0.1)
+    for (i in dense_obs) {
+      indices <- which((P@i + 1) ==i)
+      P@x[indices] <- 1/length(indices)
+    }
+  }
+  return(P)}
 
 
 .expand_poly <- function(df) {

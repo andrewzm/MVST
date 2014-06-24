@@ -1,9 +1,8 @@
 ## ----lib-load------------------------------------------------------------
 library(Matrix)
-library(devtools)
 library(ggplot2)
 library(linalg)
-load_all("..")
+library(MVST)
 
 ## ----data-load-----------------------------------------------------------
 data(icesat)
@@ -137,7 +136,7 @@ Comb <- rbind(((graph_df$t== 2) & (graph_df$in_land == T))*graph_df$mass_GT_per_
                        ((graph_df$t== 4) & (graph_df$in_land == T))*graph_df$mass_GT_per_year)
 
 ## ----Results_comb,cache=TRUE---------------------------------------------
-Results_linear_comb <- Infer(G_reduced,fine_scale=F,Comb = Comb)
+Results_linear_comb <- Infer(G_reduced,Comb = Comb)
 
 ## ----Results_comb2-------------------------------------------------------
 print(Results_linear_comb$Comb_results)

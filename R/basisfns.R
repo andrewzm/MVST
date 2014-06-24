@@ -1,3 +1,43 @@
+#' @rdname mass_matrix
+#' @aliases mass_matrix,FEBasis-method
+setMethod("mass_matrix",signature(B = "FEBasis"),  
+          function(B) {
+            return(B@pars$M)
+          })
+
+#' @rdname stiffness_matrix
+#' @aliases stiffness_matrix,FEBasis-method
+setMethod("stiffness_matrix",signature(B = "FEBasis"), 
+          function(B) {
+            return(B@pars$K)
+          })
+
+#' Load meshes
+#'
+#' Imports meshes from folders containing the files \code{p.csv, t.csv, M.csv} and \code{K.csv} which are csv files containing the vertices, triangulations, mass matrix and stiffness matrix details respectively. The matrices should be stored in the three-column format \code{i,j,k}.
+#' @param paths a list of path names to the relevant folders
+#' @export
+#' @return a list of objects of class \code{FEBasis}. Please refer to the vignette for and example.
+Load_meshes <- function(paths) {
+  
+  Meshes <- lapply(paths,function(x) {
+    p <-  round(as.matrix(read.table(file.path(x,"p.csv"),sep=",")))
+    tri <- as.matrix(read.table(file.path(x,"t.csv"),sep=","))
+    M <-  as.matrix(read.table(file.path(x,"M.csv"),sep=","))
+    K <-  as.matrix(read.table(file.path(x,"K.csv"),sep=","))
+    n <- nrow(p)
+    M <- sparseMatrix(i=M[,1],j=M[,2],x=M[,3],dims=c(n,n))
+    K <- sparseMatrix(i=K[,1],j=K[,2],x=K[,3],dims=c(n,n))
+   
+    return(initFEbasis(p=p, t = tri, M = M, K = K))
+    
+  })
+  names(Meshes) <- names(paths)
+
+  return(Meshes)
+  
+}
+
 GRBF <- function(c,std,s) {
   c_ext <- matrix(c,nrow(s),2,byrow=T)
   dist_sq <- (rowSums((s - c_ext)^2))
@@ -22,19 +62,6 @@ setMethod("basisinterp",signature(G = "Basis"),  # GRBF basis with mean offset a
             return(as.vector(y))
           })
 
-#' @rdname mass_matrix
-#' @aliases mass_matrix,FEBasis-method
-setMethod("mass_matrix",signature(B = "FEBasis"),  
-          function(B) {
-            return(B@pars$M)
-          })
-
-#' @rdname stiffness_matrix
-#' @aliases stiffness_matrix,FEBasis-method
-setMethod("stiffness_matrix",signature(B = "FEBasis"), 
-          function(B) {
-            return(B@pars$K)
-          })
 tsearch2 <- function(x,y,t,xi,yi,bary=FALSE) {
   if (!is.vector(x)) {
     stop(paste(deparse(substitute(x)), "is not a vector"))
@@ -70,31 +97,5 @@ tsearch2 <- function(x,y,t,xi,yi,bary=FALSE) {
   }
   return(out)
   
-  
-}
-
-#' Load meshes
-#'
-#' Imports meshes from folders containing the files \code{p.csv, t.csv, M.csv} and \code{K.csv} which are csv files containing the vertices, triangulations, mass matrix and stiffness matrix details respectively. The matrices should be stored in the three-column format \code{i,j,k}.
-#' @param paths a list of path names to the relevant folders
-#' @export
-#' @return a list of objects of class \code{FEBasis}. Please refer to the vignette for and example.
-Load_meshes <- function(paths) {
-  
-  Meshes <- lapply(paths,function(x) {
-    p <-  round(as.matrix(read.table(file.path(x,"p.csv"),sep=",")))
-    tri <- as.matrix(read.table(file.path(x,"t.csv"),sep=","))
-    M <-  as.matrix(read.table(file.path(x,"M.csv"),sep=","))
-    K <-  as.matrix(read.table(file.path(x,"K.csv"),sep=","))
-    n <- nrow(p)
-    M <- sparseMatrix(i=M[,1],j=M[,2],x=M[,3],dims=c(n,n))
-    K <- sparseMatrix(i=K[,1],j=K[,2],x=K[,3],dims=c(n,n))
-   
-    return(initFEbasis(p=p, t = tri, M = M, K = K))
-    
-  })
-  names(Meshes) <- names(paths)
-
-  return(Meshes)
   
 }

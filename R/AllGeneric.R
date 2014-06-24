@@ -148,23 +148,134 @@ setGeneric("tail", function(x,...) standardGeneric("tail"))
 #' icesat_2x <- concat(icesat_obs,icesat_obs)
 setGeneric("concat", function(...) standardGeneric("concat"))
 
+#' @title Compress graph 
+#' @description This function takes am object of class \code{Graph} and compresses it into a one-layer network of class \code{Graph_2nodes}. 
+#' The latter object can be then passed to \code{Infer} for a standard Gaussian update.
+#' @param Graph object of class \code{Graph}.
+#' @return Object of class \code{Graph_2nodes}.
+#' @keywords Graph, compress
+#' @export
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#' data(icesat)
+#' data(surf_fe)
+#'
+#' ## First create observation object
+#' icesat_obs <- Obs(df=icesat,
+#'                  abs_lim = 5,
+#'                  avr_method = "median",
+#'                  box_size=100,
+#'                  name="icesat")
+#'
+#' ## Now create GMRF defined over some FE basis
+#' Mesh <- initFEbasis(p=surf_fe$p,
+#'                     t=surf_fe$t,
+#'                     M=surf_fe$M,
+#'                     K=surf_fe$K)
+#' 
+#' mu <- matrix(0,nrow(Mesh),1)
+#' Q <- sparseMatrix(i=1:nrow(surf_fe$p), j = 1:nrow(surf_fe$p), x = 1)
+#'
+#' my_GMRF <- GMRF(mu = mu, Q = Q,name="SURF",t_axis = 0:6)
+#' SURF <-GMRF_basis(G = my_GMRF, Basis = Mesh)
+#'
+#' L1 <- link(SURF,icesat_obs)
+#' e <- link_list(list(L1))
+#' v <- block_list(list(O = icesat_obs, G = SURF))
+#' G <- new("Graph",e=e,v=v)
+#' G_reduced <- compress(G)
+#' }
+setGeneric("compress", function(Graph) standardGeneric("compress"))
 
+#' @title Infer
+#' @description Infer is a generic function which carries out inference for a given model. For now only a pure Gaussian model is considered; however
+#' one has various options with which to carry out the Gaussian update in order to maximise use of resources, for example on linear combinations of
+#' the state-space rather than the whole space/
+#' @param Graph object of class \code{Graph_2nodes}.
+#' @param SW if 1, the Shermany Woodbury is used for inference over linear combinations, see vignette for details. This option cannot be 
+#' set if linear combinations are not specified.
+#' @param Comb an \code{m} \eqn{\times} \code{n} matrix where each row is a binary vector indicating which of the \code{n} states constitute the linear combination.
+#' @return List with fields \code{Graph} (the original graph) and \code{Post_GMRF}. The latter is an object of class \code{GMRF} with mean and precision
+#' given by the update. If a set of linear combinations is desired, then the list also contains a field \code{Comb_results}, a list with entries \code{mu} 
+#' and \code{cov}, the mean and covariance over the linear combinations respectively.
+#' @keywords Graph, inference, Gaussian update
+#' @export
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#' data(icesat)
+#' data(surf_fe)
+#'
+#' ## First create observation object
+#' icesat_obs <- Obs(df=icesat,
+#'                  abs_lim = 5,
+#'                  avr_method = "median",
+#'                  box_size=100,
+#'                  name="icesat")
+#'
+#' ## Now create GMRF defined over some FE basis
+#' Mesh <- initFEbasis(p=surf_fe$p,
+#'                     t=surf_fe$t,
+#'                     M=surf_fe$M,
+#'                     K=surf_fe$K)
+#' 
+#' mu <- matrix(0,nrow(Mesh),1)
+#' Q <- sparseMatrix(i=1:nrow(surf_fe$p), j = 1:nrow(surf_fe$p), x = 1)
+#'
+#' my_GMRF <- GMRF(mu = mu, Q = Q,name="SURF",t_axis = 0:6)
+#' SURF <-GMRF_basis(G = my_GMRF, Basis = Mesh)
+#'
+#' L1 <- link(SURF,icesat_obs)
+#' e <- link_list(list(L1))
+#' v <- block_list(list(O = icesat_obs, G = SURF))
+#' G <- new("Graph",e=e,v=v)
+#' G_reduced <- compress(G)
+#' Results <- Infer(G_reduced)
+#' }
+setGeneric("Infer", function(Graph,...) standardGeneric("Infer"))
 
+#' @title Set diffusion parameter on observations.
+#' @description Accounts for averaging over observations, to account for signal leakage with nearby observations. See details.
+#' @param .Object Object of class \code{Obs}.
+#' @param alpha The diffusion coefficient. See details.
+#' @param av_dist The distance within which observations are assumed to be coupled.
+#' @return Object of class \code{Obj} with updated diffusion parameter \code{alpha0} and averaging matrix \code{P}.
+#' @details  Thie function sets the diffusion parameter \eqn{\alpha} in the model \deqn{z = P(\alpha)y + e} where the matrix \eqn{P(\alpha)} is defined
+#' as \deqn{P^{(i,j)} = \left\{ \begin{array}{ll} 
+#'                      \alpha, & i \sim j, (n_i)\theta > 0.9 \\ [2ex]
+#'                                          1 - (n_i)\theta & i = j, (n_i)\theta > 0.9 \\ [2ex]
+#'                                               \displaystyle \frac{1}{(n_i)+1} & \textrm{otherwise}
+#'                                                                       \end{array} \right.
+#'                                                                       }}
+#' where \eqn{n_i} denotes the number of neighbours of observation \eqn{i} and \eqn{\sim} denotes `neighbour of'. 
+#' The matrix describes the proportion of signal \eqn{n_i\alpha} which should be attributed to the spatial regions associated with the 
+#' neighbouring observations. If \eqn{n_i\theta} exceeds 0.9 (indicative of poor localisation), the observation
+#' is assumed to be an equal average of itself and its neighbours. Two (observations are assigned as neighbours if their geometric 
+#' centres are distanced by less than \code{av_dist}.
+#' @keywords Observation, average
+#' @export
+#' @examples
+#' # Create three polygon 'footprints'
+#' pol_df <- rbind(data.frame(id=1,x1=0,x2=0,x3=1,x4=1,y1=0,y2=1,y3=1,y4=0,t=0),
+#'                 data.frame(id=2,x1=1,x2=1,x3=2,x4=2,y1=1,y2=2,y3=2,y4=1,t=0),
+#'                 data.frame(id=3,x1=2,x2=2,x3=3,x4=3,y1=2,y2=3,y3=3,y4=2,t=0))
+#' df <- rbind(data.frame(id=1,x=0.5,y=0.5,z=1,std=1,t=0),
+#'             data.frame(id=2,x=1.5,y=1.5,z=2,std=1,t=0),
+#'             data.frame(id=3,x=2.5,y=2.5,z=1.5,std=1,t=0))
+#' O <- Obs_poly(df=df,pol_df=pol_df)
+#' plot(O,"z")
+#' Odiff <- setalpha(O,0.1,av_dist=2)
+setGeneric("setalpha", function(.Object,alpha,av_dist) standardGeneric("setalpha"))
 
 setGeneric(".exist", function(L,to,from) standardGeneric(".exist"))
-setGeneric("compress", function(Graph) standardGeneric("compress"))
 setGeneric("getData", function(.Object) standardGeneric("getData"))
 setGeneric("getC",function(.Object) standardGeneric("getC"))
 setGeneric("setGMRF", function(Graph,obj) standardGeneric("setGMRF"))
-setGeneric("setalpha", function(.Object,alpha,av_dist) standardGeneric("setalpha"))
-setGeneric("Infer", function(Graph,...) standardGeneric("Infer"))
-
 setGeneric("validate", function(Results,G,sim_obs=F,...) standardGeneric("validate"))
 setGeneric("pred_variance_large", function(Results,G) standardGeneric("pred_variance_large"))
 setGeneric("split_validation", function(.Object,samples,common,...) standardGeneric("split_validation"))
 setGeneric("sample_GMRF", function(G,L=NULL,reps=1,P=NULL) standardGeneric("sample_GMRF"))
-
-
 setGeneric("basisinterp", function(G,s,weights) standardGeneric("basisinterp"))
 setGeneric(".extractClass", function(L,Cl) standardGeneric(".extractClass"))
 setGeneric(".find_inc_matrix", function(basis,obs,...) standardGeneric(".find_inc_matrix"))

@@ -304,6 +304,11 @@ setMethod(".exist",signature(L="link_list",to="block",from="block"),function(L,t
     return(0)
   }
 })
+
+
+#' @rdname compress
+#' @aliases compress,Graph-method
+#' @export
 setMethod("compress",signature(Graph="Graph"),function(Graph) {
   # Create ordering
   Olist <- .extractClass(Graph@v,"Obs")
@@ -341,14 +346,9 @@ setMethod("setGMRF",signature(Graph="Graph_2nodes", obj="GMRF"),
             }
             return(Graph)
           })
+
 setMethod("Infer",signature(Graph="Graph_2nodes"),
-          function(Graph,SW=0,...) {
-            args <- list(...)
-            if("matlab_server" %in% names(args))  {
-              matlab_server <- args$matlab_server
-            } else {
-              matlab_server <- NULL 
-            }
+          function(Graph,SW=0,Comb=NULL) {
             Olist <- .extractClass(Graph@v,"Obs")
             Glist <- .extractClass(Graph@v,"process")
             
@@ -360,155 +360,38 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
             Q_full <- getPrecision(Field)
             x_prior <- getMean(Field)
             C_full <- Graph@e[[1]]@Cmat
-            if(!("fine_scale_opts" %in% names(args))) {
-              if(!SW) {
-                ybar = t(C_full)%*%Qobs%*%y_tot$z + Q_full %*% x_prior
-                Qtot <- t(C_full)%*%Qobs%*%C_full + Q_full 
-                cat("Doing Cholesky and Takahashi",sep="\n")
-                X <- cholPermute(Qtot,matlab_server=matlab_server)
-               
-                x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
-                if(!("Comb" %in% names(args))) {
-                  # Standard Gaussian update
-                  Partial_Cov <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
-                  x_margvar <- diag(Partial_Cov)
-                } else {
-                  Cov_lin <- cholsolveAQinvAT(Qtot,args$Comb,Lp = X$Qpermchol,P=X$P)
-                  x_mean_comb <- as.vector(args$Comb%*%x_mean)
-                  x_margvar_comb <- as.vector(diag(Cov_lin)) 
-                }
+            if(!SW) {
+              ybar = t(C_full)%*%Qobs%*%y_tot$z + Q_full %*% x_prior
+              Qtot <- t(C_full)%*%Qobs%*%C_full + Q_full 
+              cat("Doing Cholesky and Takahashi",sep="\n")
+              X <- cholPermute(Qtot,matlab_server=matlab_server)
+              
+              x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
+              if(is.null(Comb)) {
+                # Standard Gaussian update
+                Partial_Cov <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
+                x_margvar <- diag(Partial_Cov)
               } else {
-                if(!("Comb" %in% names(args))) {
-                  stop("Sherman-Woodbury without linear combs not yet implemented.")
-                } else {
-                  X <- cholPermute(Q_full,matlab_server=matlab_server)
-                  U1 <- cholsolve(Q_full,t(args$Comb),perm=T,cholQp = X$Qpermchol, P = X$P)
-                  Tmat <- chol2inv(chol(diag((1/(diag(Qobs)))) + cholsolveAQinvAT(Q_full,C_full,Lp=X$Qpermchol, P = X$P)))
-                  U2 <-   -cholsolve(Q_full,t(C_full) %*% (Tmat %*% (C_full %*% U1)),perm=T,cholQp = X$Qpermchol, P = X$P)
-                  Cov_lin <- args$Comb %*% (U1 + U2)
-                  mu_lin <- t(U1 + U2) %*% (t(C_full) %*% Qobs %*% y_tot$z + Q_full %*% x_prior)
-                  x_mean_comb <- as.vector(mu_lin)
-                  x_margvar_comb <- as.vector(diag(Cov_lin))
-                }
+                Cov_lin <- cholsolveAQinvAT(Qtot,Comb,Lp = X$Qpermchol,P=X$P)
+                x_mean_comb <- as.vector(Comb%*%x_mean)
+                x_margvar_comb <- as.vector(diag(Cov_lin)) 
               }
             } else {
-              
-              # Gaussian update where observations have fine-scale variation to be filtered out
-              Pars <- args$fine_scale_opts
-              if(!Pars$est_fine_scale) {
-                cat("Not estimating fine-scale parameters. Setting as initial value...",sep="\n")
-                eta <- Pars$eta_init
-                prec_delta <- Pars$prec_delta_init
-                b <- Obs@df$fine_scale
-                delta_prec <- as.vector(prec_delta * exp(-b*eta))
-                Qobs_delta <- sparsediag(1/(1/delta_prec + 1/diag(Qobs)))
-                ybar = t(C_full)%*%Qobs_delta%*%y_tot$z
-                Qtot <- t(C_full)%*%Qobs_delta%*%C_full + Q_full 
-                cat("Doing Cholesky and Takahashi",sep="\n")
-                X <- cholPermute(Qtot,matlab_server=matlab_server)
-                Partial_Cov <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
-                x_margvar <- diag(Partial_Cov)
-                x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
-                
+              if(is.null(Comb)) {
+                stop("Will not attempt Sherman-Woodbury without linear combs.")
               } else {
-                
-                # First do standard Gaussian update
-                ybar = t(C_full)%*%Qobs%*%y_tot$z
-                Qtot <- t(C_full)%*%Qobs%*%C_full + Q_full 
-                cat("Doing Cholesky and Takahashi",sep="\n")
-                X <- cholPermute(Qtot,matlab_server=matlab_server)
-                Partial_Cov <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
-                x_margvar <- diag(Partial_Cov)
-                x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
-                
-                cat("Fine-scale estimation required. This will take some time...",sep="\n")
-                Pars <- args$fine_scale_opts
-                # Initialise
-                VBiter <- Pars$VBiter
-                x_mean <- x_mean
-                x1_mean <- y_tot
-                prec_delta <- rep(Pars$prec_delta_init,VBiter)
-                prec_delta_var <- 0 #not used
-                prec_delta_alpha <- Pars$prec_delta_alpha
-                prec_delta_beta <- Pars$prec_delta_beta
-                eta = rep(Pars$eta_init,VBiter)
-                prec_eta = 1000
-                var_eta_post <- 0
-                Symbolic <- (t(C_full) %*% C_full) 
-                Symbolic@x = rep(1,length(Symbolic@x))
-                b <- Obs@df$fine_scale
-                
-                for (m in 2:VBiter) {
-                  Qdelta <- sparsediag(as.vector(prec_delta[m-1] * exp(-b*eta[m-1] + b^2*var_eta_post/2)))      
-                  
-                  # Find q(x1)
-                  Qx1 <- Qobs + Qdelta
-                  ybar = Qobs %*% y_tot$z + Qdelta %*%C_full %*% x_mean
-                  cat("Doing Cholesky and Takahashi",sep="\n")
-                  X <- cholPermute(Qx1,matlab_server=matlab_server)
-                  Partial_Cov_x1 <- Takahashi_Davis(Qx1,cholQp = X$Qpermchol,P = X$P)
-                  x1_margvar <- diag(Partial_Cov_x1)
-                  x1_mean <- as.vector(cholsolve(Qx1,ybar,perm=T,cholQp = X$Qpermchol, P = X$P))
-                  
-                  # Find q(x)
-                  ybar = t(C_full)%*%Qdelta%*%(x1_mean) 
-                  Qtot <- t(C_full)%*%Qdelta%*%C_full + Q_full 
-                  cat("Doing Cholesky and Takahashi",sep="\n")
-                  X <- cholPermute(Qtot,matlab_server=matlab_server)
-                  Partial_Cov_x <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
-                  x_margvar <- diag(Partial_Cov_x)
-                  x_mean <- as.vector(cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P))
-                  
-                  Partial_Cov2 <- Partial_Cov_x * Symbolic # I need only these elements
-                  
-                  if (VBiter > 2) {
-                    # Find q(eta) V1
-                    Term1 <- (x1_margvar + x1_mean^2) 
-                    Term2 <- -2*(x1_mean*(C_full %*% x_mean))
-                    Term3a <-   (C_full %*% x_mean)^2
-                    Term3b <- rep(0,nrow(C_full))
-                    Term3b <- rowSums((C_full %*% Partial_Cov2) * C_full)
-                    
-                    
-                    gamma <- Term1  + Term2 + Term3a + Term3b
-                    
-                    foptim <- function(xx) {
-                      return(as.vector(-(-0.5*prec_delta[m-1]*t(gamma)%*%exp((-b)*xx) + 0.5*sum((-b)*xx) - 0.5*xx*prec_eta*xx)))
-                    }
-                    
-                    fgrad <- function(xx) {
-                      return(as.vector(-(-0.5*prec_delta[m-1]*t(gamma)%*%((-b) * exp((-b)*xx)) + 0.5*sum(-b) - xx*prec_eta  )))
-                    }
-                    
-                    eta[m] <- optim(par=eta[m-1],
-                                    fn=foptim,
-                                    gr=fgrad,
-                                    control=list(maxit=50,
-                                                 trace = TRUE,
-                                                 REPORT = 2,
-                                                 parscale=2),
-                                    method="BFGS",hessian = FALSE)$par
-                    prec_eta_post <-  as.vector(0.5*prec_delta[m-1]*t(gamma)%*%((-b)^2 * exp((-b)*eta[m])) + prec_eta)
-                    var_eta_post <- 1/prec_eta_post
-                    
-                    # Find q(prec)
-                    QQ <- sparsediag(as.vector(exp(-b*eta[m])))      
-                    Term1 <- sum(QQ@x * (x1_margvar + x1_mean^2))
-                    Term2 <- -2*colSums(QQ@x * x1_mean*(C_full %*% x_mean))
-                    Term3a <- colSums(QQ@x*(C_full %*% x_mean)^2)
-                    Term3b <- sum(colSums(Partial_Cov_x * (t(C_full) %*% QQ %*% C_full)))  # All required elements of Partial_Cov are computed!! No need to compute more elements :) 
-                    alpha_new <- prec_delta_alpha + nrow(y_tot)/2
-                    beta_new <- prec_delta_beta + (Term1 + Term2 + Term3a + Term3b)/2
-                    prec_delta[m] <- alpha_new/beta_new       
-                    prec_delta_var <- alpha_new/beta_new^2
-                  }  
-                  save(x_mean,x_margvar,x1_mean,x1_margvar,eta,prec_delta,
-                       file='./cache/Temp_VB_fine_scale_Results.rda')
-                }
-                
+                X <- cholPermute(Q_full,matlab_server=matlab_server)
+                U1 <- cholsolve(Q_full,t(Comb),perm=T,cholQp = X$Qpermchol, P = X$P)
+                Tmat <- chol2inv(chol(diag((1/(diag(Qobs)))) + cholsolveAQinvAT(Q_full,C_full,Lp=X$Qpermchol, P = X$P)))
+                U2 <-   -cholsolve(Q_full,t(C_full) %*% (Tmat %*% (C_full %*% U1)),perm=T,cholQp = X$Qpermchol, P = X$P)
+                Cov_lin <- Comb %*% (U1 + U2)
+                mu_lin <- t(U1 + U2) %*% (t(C_full) %*% Qobs %*% y_tot$z + Q_full %*% x_prior)
+                x_mean_comb <- as.vector(mu_lin)
+                x_margvar_comb <- as.vector(diag(Cov_lin))
               }
             }
-            if(!("Comb" %in% names(args))) {
+            
+            if(is.null(Comb)) {
               rep <- cbind(Field@rep,data.frame(x_mean = as.numeric(x_mean), x_margvar=as.numeric(x_margvar)))
               Results_GMRF <- new("GMRF",mu=matrix(x_mean),Q = Qtot,rep=rep)
               for(i in 1:length(Graph@v)) {
@@ -519,32 +402,65 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
               Results_list <- list(Graph=Graph, Post_GMRF = Results_GMRF,Partial_Cov = Partial_Cov,
                                    Qpermchol = X$Qpermchol, P = X$P)
             } else {
+              Comb_results <- list(mu=matrix(x_mean_comb),cov = Cov_lin)
               if(!SW) {
                 Results_GMRF <- new("GMRF",mu=matrix(x_mean),Q = Qtot)
+                Results_list <- list(Graph=Graph, Post_GMRF = Results_GMRF, Comb_results = Comb_results)
               } else {
-                Results_GMRF <- NA
+                Results_list <- list(Graph=Graph, Comb_results = Comb_results)
               }
-              Comb_results <- list(mu=matrix(x_mean_comb),cov = Cov_lin)
-              Results_list <- list(Graph=Graph, Post_GMRF = Results_GMRF, Comb_results = Comb_results)
-            }
-            
-            if(("fine_scale_opts" %in% names(args))) {
-              Results_list$VB_results <- list(prec_delta = prec_delta,
-                                              prec_delta_var = prec_delta_var,
-                                              eta = eta,
-                                              eta_var = var_eta_post)
             }
             
             return(Results_list)
           })
+
+
+#' @title link
+#' @description This function takes am object of class \code{process} and an object of class \code{Obs} and creates a link between the two.
+#' If the \code{process} is of class \code{GMRF_basis}, then an incidence matrix is constructed which maps the process to the observation. If
+#' there is no basis set associated with the GMRF, then the incidence matrix needs to be specified manually.
+#' @param Obj1 object of class \code{process}.
+#' @param Obj2 object of class \code{Obs}.
+#' @param ... to be specified...
+#' @return Object of class \code{linkGO}, a link between a GMRF and an observation.
+#' @keywords link, incidence matrix
+#' @export
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#' data(icesat)
+#' data(surf_fe)
+#'
+#' ## First create observation object
+#' icesat_obs <- Obs(df=icesat,
+#'                  abs_lim = 5,
+#'                  avr_method = "median",
+#'                  box_size=100,
+#'                  name="icesat")
+#'
+#' ## Now create GMRF defined over some FE basis
+#' Mesh <- initFEbasis(p=surf_fe$p,
+#'                     t=surf_fe$t,
+#'                     M=surf_fe$M,
+#'                     K=surf_fe$K)
+#' 
+#' mu <- matrix(0,nrow(Mesh),1)
+#' Q <- sparseMatrix(i=1:nrow(surf_fe$p), j = 1:nrow(surf_fe$p), x = 1)
+#'
+#' my_GMRF <- GMRF(mu = mu, Q = Q,name="SURF",t_axis = 0:6)
+#' SURF <-GMRF_basis(G = my_GMRF, Basis = Mesh)
+#'
+#' L1 <- link(SURF,icesat_obs)
+#' }
 link <- function(Obj1,Obj2,...) {
   if (is(Obj1,"process") & is(Obj2,"Obs"))
   {
     .Object <- new("linkGO",from=Obj1,to=Obj2,...)
-  } else stop("Links between blocks in same group not allowed (for now)") 
+  } else stop("Invalid object specification") 
   
   return(.Object)
 }
+
 ## Find C matrix when observations are isolated points
 FindC <- function(p,tri,locs,method="R") {
   if (length(locs[[1]]) > 0)  {
@@ -619,13 +535,17 @@ FindC_polyaverage  <- function(p,tri,polygons,plotit=F,mulfun = 0,method="R",ds=
     tris_to_consider <- which(apply(tri,1,function(x) any(x %in% pnts_to_consider)))
     tris <- tri[tris_to_consider,]
     
-    x_grid <- linspace(min(pv[,1]),max(pv[,1]),ds)
-    y_grid <- linspace(min(pv[,2]),max(pv[,2]),ds)
+    x_grid <- seq(min(pv[,1]),max(pv[,1]),length=ds)
+    y_grid <- seq(min(pv[,2]),max(pv[,2]),length=ds)
     dx <- mean(diff(x_grid))
     dy <- mean(diff(y_grid))
-    GRID <- meshgrid(x_grid,y_grid)
-    x <- as.vector(GRID$x)
-    y <- as.vector(GRID$y)
+    #GRID <- meshgrid(x_grid,y_grid)
+    #x <- as.vector(GRID$x)
+    #y <- as.vector(GRID$y)
+    GRID <- expand.grid(y_grid,x_grid)
+    x <- GRID[,2]
+    y <- GRID[,1]
+
     xy_in_poly <- pnt.in.poly(cbind(x,y),pv)$pip
     x <- x[which(xy_in_poly == 1)]
     y <- y[which(xy_in_poly == 1)]
@@ -716,4 +636,207 @@ FindC_average_EOF  <- function(X,polygons,mulfun=1)  {
 }
 
 
-
+# setMethod("Infer",signature(Graph="Graph_2nodes"),
+#           function(Graph,SW=0,...) {
+#             args <- list(...)
+#             if("matlab_server" %in% names(args))  {
+#               matlab_server <- args$matlab_server
+#             } else {
+#               matlab_server <- NULL 
+#             }
+#             Olist <- .extractClass(Graph@v,"Obs")
+#             Glist <- .extractClass(Graph@v,"process")
+#             
+#             Obs <- Olist[[1]]
+#             Field <- Glist[[1]]
+#             t_axis <- Glist[[1]]@t_axis
+#             y_tot <- getDf(Obs)
+#             Qobs <- getPrecision(Obs)
+#             Q_full <- getPrecision(Field)
+#             x_prior <- getMean(Field)
+#             C_full <- Graph@e[[1]]@Cmat
+#             if(!("fine_scale_opts" %in% names(args))) {
+#               if(!SW) {
+#                 ybar = t(C_full)%*%Qobs%*%y_tot$z + Q_full %*% x_prior
+#                 Qtot <- t(C_full)%*%Qobs%*%C_full + Q_full 
+#                 cat("Doing Cholesky and Takahashi",sep="\n")
+#                 X <- cholPermute(Qtot,matlab_server=matlab_server)
+#                 
+#                 x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
+#                 if(!("Comb" %in% names(args))) {
+#                   # Standard Gaussian update
+#                   Partial_Cov <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
+#                   x_margvar <- diag(Partial_Cov)
+#                 } else {
+#                   Cov_lin <- cholsolveAQinvAT(Qtot,args$Comb,Lp = X$Qpermchol,P=X$P)
+#                   x_mean_comb <- as.vector(args$Comb%*%x_mean)
+#                   x_margvar_comb <- as.vector(diag(Cov_lin)) 
+#                 }
+#               } else {
+#                 if(!("Comb" %in% names(args))) {
+#                   stop("Sherman-Woodbury without linear combs not yet implemented.")
+#                 } else {
+#                   X <- cholPermute(Q_full,matlab_server=matlab_server)
+#                   U1 <- cholsolve(Q_full,t(args$Comb),perm=T,cholQp = X$Qpermchol, P = X$P)
+#                   Tmat <- chol2inv(chol(diag((1/(diag(Qobs)))) + cholsolveAQinvAT(Q_full,C_full,Lp=X$Qpermchol, P = X$P)))
+#                   U2 <-   -cholsolve(Q_full,t(C_full) %*% (Tmat %*% (C_full %*% U1)),perm=T,cholQp = X$Qpermchol, P = X$P)
+#                   Cov_lin <- args$Comb %*% (U1 + U2)
+#                   mu_lin <- t(U1 + U2) %*% (t(C_full) %*% Qobs %*% y_tot$z + Q_full %*% x_prior)
+#                   x_mean_comb <- as.vector(mu_lin)
+#                   x_margvar_comb <- as.vector(diag(Cov_lin))
+#                 }
+#               }
+#             } else {
+#               
+#               # Gaussian update where observations have fine-scale variation to be filtered out
+#               Pars <- args$fine_scale_opts
+#               if(!Pars$est_fine_scale) {
+#                 cat("Not estimating fine-scale parameters. Setting as initial value...",sep="\n")
+#                 eta <- Pars$eta_init
+#                 prec_delta <- Pars$prec_delta_init
+#                 b <- Obs@df$fine_scale
+#                 delta_prec <- as.vector(prec_delta * exp(-b*eta))
+#                 Qobs_delta <- sparsediag(1/(1/delta_prec + 1/diag(Qobs)))
+#                 ybar = t(C_full)%*%Qobs_delta%*%y_tot$z
+#                 Qtot <- t(C_full)%*%Qobs_delta%*%C_full + Q_full 
+#                 cat("Doing Cholesky and Takahashi",sep="\n")
+#                 X <- cholPermute(Qtot,matlab_server=matlab_server)
+#                 Partial_Cov <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
+#                 x_margvar <- diag(Partial_Cov)
+#                 x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
+#                 
+#               } else {
+#                 
+#                 # First do standard Gaussian update
+#                 ybar = t(C_full)%*%Qobs%*%y_tot$z
+#                 Qtot <- t(C_full)%*%Qobs%*%C_full + Q_full 
+#                 cat("Doing Cholesky and Takahashi",sep="\n")
+#                 X <- cholPermute(Qtot,matlab_server=matlab_server)
+#                 Partial_Cov <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
+#                 x_margvar <- diag(Partial_Cov)
+#                 x_mean <- cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P)
+#                 
+#                 cat("Fine-scale estimation required. This will take some time...",sep="\n")
+#                 Pars <- args$fine_scale_opts
+#                 # Initialise
+#                 VBiter <- Pars$VBiter
+#                 x_mean <- x_mean
+#                 x1_mean <- y_tot
+#                 prec_delta <- rep(Pars$prec_delta_init,VBiter)
+#                 prec_delta_var <- 0 #not used
+#                 prec_delta_alpha <- Pars$prec_delta_alpha
+#                 prec_delta_beta <- Pars$prec_delta_beta
+#                 eta = rep(Pars$eta_init,VBiter)
+#                 prec_eta = 1000
+#                 var_eta_post <- 0
+#                 Symbolic <- (t(C_full) %*% C_full) 
+#                 Symbolic@x = rep(1,length(Symbolic@x))
+#                 b <- Obs@df$fine_scale
+#                 
+#                 for (m in 2:VBiter) {
+#                   Qdelta <- sparsediag(as.vector(prec_delta[m-1] * exp(-b*eta[m-1] + b^2*var_eta_post/2)))      
+#                   
+#                   # Find q(x1)
+#                   Qx1 <- Qobs + Qdelta
+#                   ybar = Qobs %*% y_tot$z + Qdelta %*%C_full %*% x_mean
+#                   cat("Doing Cholesky and Takahashi",sep="\n")
+#                   X <- cholPermute(Qx1,matlab_server=matlab_server)
+#                   Partial_Cov_x1 <- Takahashi_Davis(Qx1,cholQp = X$Qpermchol,P = X$P)
+#                   x1_margvar <- diag(Partial_Cov_x1)
+#                   x1_mean <- as.vector(cholsolve(Qx1,ybar,perm=T,cholQp = X$Qpermchol, P = X$P))
+#                   
+#                   # Find q(x)
+#                   ybar = t(C_full)%*%Qdelta%*%(x1_mean) 
+#                   Qtot <- t(C_full)%*%Qdelta%*%C_full + Q_full 
+#                   cat("Doing Cholesky and Takahashi",sep="\n")
+#                   X <- cholPermute(Qtot,matlab_server=matlab_server)
+#                   Partial_Cov_x <- Takahashi_Davis(Qtot,cholQp = X$Qpermchol,P = X$P)
+#                   x_margvar <- diag(Partial_Cov_x)
+#                   x_mean <- as.vector(cholsolve(Qtot,ybar,perm=T,cholQp = X$Qpermchol, P = X$P))
+#                   
+#                   Partial_Cov2 <- Partial_Cov_x * Symbolic # I need only these elements
+#                   
+#                   if (VBiter > 2) {
+#                     # Find q(eta) V1
+#                     Term1 <- (x1_margvar + x1_mean^2) 
+#                     Term2 <- -2*(x1_mean*(C_full %*% x_mean))
+#                     Term3a <-   (C_full %*% x_mean)^2
+#                     Term3b <- rep(0,nrow(C_full))
+#                     Term3b <- rowSums((C_full %*% Partial_Cov2) * C_full)
+#                     
+#                     
+#                     gamma <- Term1  + Term2 + Term3a + Term3b
+#                     
+#                     foptim <- function(xx) {
+#                       return(as.vector(-(-0.5*prec_delta[m-1]*t(gamma)%*%exp((-b)*xx) + 0.5*sum((-b)*xx) - 0.5*xx*prec_eta*xx)))
+#                     }
+#                     
+#                     fgrad <- function(xx) {
+#                       return(as.vector(-(-0.5*prec_delta[m-1]*t(gamma)%*%((-b) * exp((-b)*xx)) + 0.5*sum(-b) - xx*prec_eta  )))
+#                     }
+#                     
+#                     eta[m] <- optim(par=eta[m-1],
+#                                     fn=foptim,
+#                                     gr=fgrad,
+#                                     control=list(maxit=50,
+#                                                  trace = TRUE,
+#                                                  REPORT = 2,
+#                                                  parscale=2),
+#                                     method="BFGS",hessian = FALSE)$par
+#                     prec_eta_post <-  as.vector(0.5*prec_delta[m-1]*t(gamma)%*%((-b)^2 * exp((-b)*eta[m])) + prec_eta)
+#                     var_eta_post <- 1/prec_eta_post
+#                     
+#                     # Find q(prec)
+#                     QQ <- sparsediag(as.vector(exp(-b*eta[m])))      
+#                     Term1 <- sum(QQ@x * (x1_margvar + x1_mean^2))
+#                     Term2 <- -2*colSums(QQ@x * x1_mean*(C_full %*% x_mean))
+#                     Term3a <- colSums(QQ@x*(C_full %*% x_mean)^2)
+#                     Term3b <- sum(colSums(Partial_Cov_x * (t(C_full) %*% QQ %*% C_full)))  # All required elements of Partial_Cov are computed!! No need to compute more elements :) 
+#                     alpha_new <- prec_delta_alpha + nrow(y_tot)/2
+#                     beta_new <- prec_delta_beta + (Term1 + Term2 + Term3a + Term3b)/2
+#                     prec_delta[m] <- alpha_new/beta_new       
+#                     prec_delta_var <- alpha_new/beta_new^2
+#                   }  
+#                   save(x_mean,x_margvar,x1_mean,x1_margvar,eta,prec_delta,
+#                        file='./cache/Temp_VB_fine_scale_Results.rda')
+#                 }
+#                 
+#               }
+#             }
+#             if(!("Comb" %in% names(args))) {
+#               rep <- cbind(Field@rep,data.frame(x_mean = as.numeric(x_mean), x_margvar=as.numeric(x_margvar)))
+#               Results_GMRF <- new("GMRF",mu=matrix(x_mean),Q = Qtot,rep=rep)
+#               for(i in 1:length(Graph@v)) {
+#                 if(is(Graph@v[[i]],"Obs")) {
+#                   Graph@v[[i]]@df$residuals <- Graph@v[[i]]@df$z - as.numeric(Graph@e$L@Cmat %*% x_mean)
+#                 }
+#               }
+#               Results_list <- list(Graph=Graph, Post_GMRF = Results_GMRF,Partial_Cov = Partial_Cov,
+#                                    Qpermchol = X$Qpermchol, P = X$P)
+#             } else {
+#               if(!SW) {
+#                 Results_GMRF <- new("GMRF",mu=matrix(x_mean),Q = Qtot)
+#               } else {
+#                 Results_GMRF <- NA
+#               }
+#               Comb_results <- list(mu=matrix(x_mean_comb),cov = Cov_lin)
+#               Results_list <- list(Graph=Graph, Post_GMRF = Results_GMRF, Comb_results = Comb_results)
+#             }
+#             
+#             if(("fine_scale_opts" %in% names(args))) {
+#               Results_list$VB_results <- list(prec_delta = prec_delta,
+#                                               prec_delta_var = prec_delta_var,
+#                                               eta = eta,
+#                                               eta_var = var_eta_post)
+#             }
+#             
+#             return(Results_list)
+#           })
+# link <- function(Obj1,Obj2,...) {
+#   if (is(Obj1,"process") & is(Obj2,"Obs"))
+#   {
+#     .Object <- new("linkGO",from=Obj1,to=Obj2,...)
+#   } else stop("Links between blocks in same group not allowed (for now)") 
+#   
+#   return(.Object)
+# }

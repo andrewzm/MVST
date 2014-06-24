@@ -37,7 +37,6 @@
 #' @importFrom grid unit grid.newpage pushViewport viewport grid.layout
 #' @importFrom geometry tsearch
 #' @importFrom fields rdist fields.rdist.near
-#' @importFrom matlab linspace logspace meshgrid
 #' @importFrom actuar dinvgamma rinvgamma qinvgamma
 #' @importFrom igraph graph.adjacency graph.bfs
 #' @name MVST

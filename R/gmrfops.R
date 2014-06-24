@@ -1,8 +1,125 @@
+#' @title Get scale from practical range
+#' 
+#' @description Takes a practical range \code{l} and the smoothness of the Matern kernel \eqn{\nu} and returns the scale parameter \eqn{\kappa}.
+#' @param l the practical range.
+#' @param nu the smoothness parameter
+#' @return numeric
+#' @keywords Matern, practical range
+#' @export
+#' @seealso The inverse \code{\link{l_from_kappa}}
+#' @examples
+#' l = 100
+#' nu = 1
+#' kappa <- kappa_from_l(l,nu)
+kappa_from_l <- function(l,nu) { return(sqrt(8*nu)/l)}
+
+#' @title Get practical range from length scale
+#' 
+#' @description Takes a scale parameter \eqn{\kappa} and the smoothness of the Matern kernel \eqn{\nu} and returns the practical range \code{l}.
+#' @param kappa the scale parameter
+#' @param nu the smoothness parameter
+#' @return numeric
+#' @keywords Matern, practical range
+#' @export
+#' @seealso The inverse \code{\link{kappa_from_l}}
+#' @examples
+#' kappa = 0.02
+#' nu = 1
+#' l <- l_from_kappa(kappa,nu)
+l_from_kappa <- function(kappa,nu) { return(sqrt(8*nu)/kappa)}
+
+
+#' @title Precision matrix from SPDE
+#' 
+#' @description This function returns the precision matrix for a GMRF over a triangulation such that it is an approximation 
+#' to a Gaussian field with a Matern kernel with pre-specified parameters.
+#' @param M the mass matrix of the finite element basis
+#' @param K the stiffness matrix of the finite element basis
+#' @param nu the smoothness parameter of the Matern kernel
+#' @param desired_prec a constant or a vector of length \code{n} where each element contains the 
+#' precision (1 over the marginal standard deviation squared) at each vertex.
+#' @param l a constant or a vector of length \code{n} where each element contains the 
+#' practical range (distance at which correlation is 0.1) at each vertex. This should be spatially smooth. Informally, 
+#' this should vary slower than the field itself, otherwise a good local approximation to the Matern representation is not guaranteed.
+#' @return Object of class "dgCMatrix"
+#' @keywords GMRF
+#' @export
+#' @examples
+#' require(Matrix)
+#' data(surf_fe)
+#' mu <- matrix(0,nrow(surf_fe$p),1) 
+#' Q <- Prec_from_SPDE_wrapper(surf_fe$M,
+#'                             surf_fe$K,
+#'                             nu = 2,
+#'                             desired_prec = 1,
+#'                             l = 100)
+#' my_GMRF <- GMRF(mu=mu, Q=Q,name="my_first_GMRF")
+Prec_from_SPDE_wrapper <- function(M,K,nu,desired_prec,l) {
+  kappa_l = sqrt(8*nu)/l
+  marg_prec <- marg_prec_from_kappa(kappa_l,nu)
+  tau <- sqrt(desired_prec/marg_prec)
+  Q <- Prec_from_SPDE(M,K,tau=tau,kappa=kappa_l,alpha=nu+1)
+  return(Q)
+}
+
+#' @title The Matern function
+#' 
+#' @param r a vector or matrix of distances.
+#' @param nu the smoothness parameter.
+#' @param var the marginal variance
+#' @param kappa the scale parameters
+#' @return a vector or matrix after passing \code{r} through the Matern function.
+#' @keywords Matern function, covariance function.
+#' @export
+#' @examples
+#' x1 <- runif(10)
+#' Sigma <- my_Matern(as.matrix(dist(x1)),nu=3/2,var=1,kappa=100)
+my_Matern <- function(r=0:100,nu=3/2,var=1,kappa=0.1) {
+  K <- var/((2^(nu-1))*gamma(nu))*(kappa*abs(r))^nu*besselK(kappa*abs(r),nu=nu)
+  if (class(K) == "matrix") {
+    diag(K) = var
+  }
+  return(K)
+}
+
+#' @title Return neighb list from precision structure
+#' @description Takes a precision matrix and returns a list of vectors, where the \code{i}th vector contains \code{i} and the indices of the neighbours of the \code{i}th variable.
+#' @param Q a sparse matrix
+#' @return a list of vectors as described in the description
+#' @export
+#' @examples
+#' G <- GMRF_RW()
+#' nlist <- neighb_from_prec(getPrecision(G))
+neighb_from_prec <- function(Q) {
+  n <- dim(Q)[1]
+  apply(matrix(1:n),1,function(x) { return(which(!(Q[x,]==0)))})
+}
+
+
+#' @title Return adjacency matrix from list of neighbours
+#' @author Andrew Zammit Mangion
+#' @description Creates a sparse adjacency matrix from list of vertex neighbours.
+#' @param nei_list a list of vectors, where each vector contains the indices of the adjacent neighbours.
+#' @return a sparse adjacency matrix (with zero on the diagonal)
+#' @export
+#' @examples
+#' nei_list <- list(c(2,3),1,1)
+#' adj.matrix <- adj_matrix_from_nei_list(nei_list)
+adj_matrix_from_nei_list <- function(nei_list) {
+  
+  adj.matrix <- sparseMatrix(i= unlist(sapply(1:length(nei_list),function(i) {rep(i,length(nei_list[[i]]))})),
+                             j = as.vector(unlist(nei_list)),
+                             x=1)
+  return(adj.matrix)
+}
+
+
 setMethod("sample_GMRF",signature="VAR_Gauss",function(G,L=NULL,reps=1,P=NULL) {
   G <- as(G,"GMRF")
   G@n <- nrow(G@Q)
   return(sample_GMRF(G,L,reps,P))
 })
+
 setMethod("sample_GMRF",signature="GMRF",function(G,L=NULL,reps=1,P=NULL) {
   n = G@n
   x <- matrix(0,n,reps)
@@ -177,36 +294,6 @@ Random_graph <- function(num_v,lambda) {
   return(neighb)
 }
 
-#' @title Return neighb list from precision structure
-#' @description Takes a precision matrix and returns a list of vectors, where the \code{i}th vector contains \code{i} and the indices of the neighbours of the \code{i}th variable.
-#' @param Q a sparse matrix
-#' @return a list of vectors as described in the description
-#' @examples
-#' G <- GMRF_RW()
-#' nlist <- neighb_from_prec(getPrecision(G))
-neighb_from_prec <- function(Q) {
-  n <- dim(Q)[1]
-  apply(matrix(1:n),1,function(x) { return(which(!(Q[x,]==0)))})
-}
-
-
-#' @title Return adjacency matrix from list of neighbours
-#' @author Andrew Zammit Mangion
-#' @description Creates a sparse adjacency matrix from list of vertex neighbours.
-#' @param nei_list a list of vectors, where each vector contains the indices of the adjacent neighbours.
-#' @return a sparse adjacency matrix (with zero on the diagonal)
-#' @export
-#' @examples
-#' nei_list <- list(c(2,3),1,1)
-#' adj.matrix <- adj_matrix_from_nei_list(nei_list)
-adj_matrix_from_nei_list <- function(nei_list) {
-
-  adj.matrix <- sparseMatrix(i= unlist(sapply(1:length(nei_list),function(i) {rep(i,length(nei_list[[i]]))})),
-                           j = as.vector(unlist(nei_list)),
-                           x=1)
-  return(adj.matrix)
-}
-
 
 ## Create a graph from a triangulation
 Graph_from_tri <- function(p,tri) {
@@ -281,8 +368,8 @@ explore_theta <- function(Covariance,log_theta_post,max_log_theta,dz=0.5,prune_g
   if (n == 1) {
     z = matrix(unlist(z_list))
   } else if (n == 2) {
-    Z <- meshgrid(z_list[[1]],z_list[[2]])
-    z <- matrix(c(c(Z$x),c(Z$y)),length(Z$x),2)
+    #Z <- meshgrid(z_list[[1]],z_list[[2]])
+    z <- as.matrix(expand.grid(z_list[[1]],z_list[[2]]))
     # } else if (n == 3) {   #3d meshgrid NOT WORKING!!
     #    Z <- meshgrid(z_list[[1]],z_list[[2]],z_list[[3]])
     #    z <- matrix(c(c(Z$x),c(Z$y),c(Z$z)),length(Z$x),3)
@@ -495,22 +582,7 @@ Prec_from_SPDE <- function(M,K,tau,kappa,alpha=1)  {
   }
   return(Q)
 }
-kappa_from_l <- function(l,nu) { return(sqrt(8*nu)/l)}
-l_from_kappa <- function(kappa,nu) { return(sqrt(8*nu)/kappa)}
-Prec_from_SPDE_wrapper <- function(M,K,intrinsic,nu,desired_prec,l) {
-  kappa_l = sqrt(8*nu)/l
-  marg_prec <- marg_prec_from_kappa(kappa_l,nu)
-  tau <- sqrt(desired_prec/marg_prec)
-  Q <- Prec_from_SPDE(M,K,tau=tau,kappa=kappa_l,alpha=nu+1)
-  return(Q)
-}
-my_Matern <- function(r=0:100,nu=3/2,var=1,kappa=0.1) {
-  K <- var/((2^(nu-1))*gamma(nu))*(kappa*abs(r))^nu*besselK(kappa*abs(r),nu=nu)
-  if (class(K) == "matrix") {
-    diag(K) = var
-  }
-  return(K)
-}
+
 Build_AQA <- function(Qx,A,T) {
   # For now T >= 3
   

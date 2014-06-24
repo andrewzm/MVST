@@ -70,14 +70,13 @@ In this introductory vignette we will adopt a very simple approach to modelling 
 
 \section{Problem setup}
 
-For this example we will need the packages \texttt{Matrix, devtools, ggplot2, MVST} and \texttt{linalg}. The last two packages are available from the github page \texttt{http://github.com/andrwzm} and can be installed using the command \texttt{install\_git} from the package \texttt{devtools}. Since \texttt{MVST} is still under development we assume that we have it on disk somewhere and can load it accordingly using the \texttt{load\_all} command in \texttt{devtools}:
+For this example we will need the packages \texttt{Matrix, devtools, ggplot2, MVST} and \texttt{linalg}. The last two packages are available from the github page \texttt{http://github.com/andrwzm} and can be installed using the command \texttt{install\_git} from the package \texttt{devtools}. Please use the option \texttt{build\_vignettes = F} when calling \texttt{install\_git}. Once all packages and dependencies are installed we load them:
 
 <<lib-load>>=
 library(Matrix)
-library(devtools)
 library(ggplot2)
 library(linalg)
-load_all("..")
+library(MVST)
 @
 
 \noindent The package \texttt{MVST} provides three datasets for this example. 
@@ -369,7 +368,7 @@ Comb <- rbind(((graph_df$t== 2) & (graph_df$in_land == T))*graph_df$mass_GT_per_
 With the graph and the combination matrix \texttt{Comb} defined we are now in a position to carry out inference on the linear combination through:
 
 <<Results_comb,cache=TRUE>>=
-Results_linear_comb <- Infer(G_reduced,fine_scale=F,Comb = Comb)
+Results_linear_comb <- Infer(G_reduced,Comb = Comb)
 @
 
 \noindent \texttt{Results\_linear\_comb} now contains a third field, which summarises the inferences over the linear combinations, \texttt{Comb\_results}. \texttt{Comb\_results} is a list with two fields, \texttt{mu} (the expectation of the estimate) and \texttt{cov} (the covariance of the estimate). For this simple analysis we get

@@ -24,10 +24,13 @@
 #' print(getPrecision(my_GMRF))
 #' print(getMean(my_GMRF))
 #' print(getDf(my_GMRF))
-GMRF <- function(mu=matrix(0,2,1),Q= sparseMatrix(i=c(1,2),j=c(1,2),x=4),intrinsic=0,n=NULL,t_axis=0,
+GMRF <- function(mu=NA,Q= sparseMatrix(i=c(1,2),j=c(1,2),x=4),intrinsic=0,n=NULL,t_axis=0,
                  rep=data.frame(),name="none") {
 
-  
+  if(is.na(mu)) {
+    mu <- matrix(0,nrow(Q),1)
+  }
+  stopifnot(nrow(mu) == nrow(Q))
   return(new("GMRF",mu=mu,Q=Q,intrinsic=intrinsic,n=n,t_axis=t_axis,rep=rep,name=name)) 
 }
 
@@ -99,7 +102,13 @@ GMRF_RW <- function(n = 10,order=1,precinc = 1,df=data.frame(),name="none") {
 #' @examples
 #'
 #' require(Matrix)
-#' print(VAR_Gauss())
+#' t_axis <- 0:10
+#' mu <- function(k) return(matrix(0,length(t_axis),1))
+#' A <- function(k)  return(sparsediag(0.4))
+#' B <- function(k)  cBind(Imat(1),k*Imat(1))
+#' Q <- function(k)  return(sparsediag(1))
+#' Qb = bdiag(Imat(1),Imat(1))
+#' VAR <- VAR_Gauss( mu_fun = mu,A=A, B=B, Qw = Q,t_axis = t_axis,Qb=Qb,name="firstVAR") 
 VAR_Gauss <- function(mu_fun = function(k) return(matrix(0,2,5)), 
                       A_fun = function(k) return(Imat(2)),
                       B_fun =  function(k) return(emptySp()), 
@@ -400,7 +409,7 @@ setMethod("initialize",signature(.Object="VAR_Gauss"),
 ##   }
 ##   .Object@df <- data_df
  
-##   .Object <- .preprocess_obs(.Object,...)
+##   .Object <- preprocess_obs(.Object,...)
 
   
 ##   if("name" %in% names(args)) {  
@@ -434,8 +443,8 @@ setMethod("initialize",signature(.Object="VAR_Gauss"),
   
 ##   callNextMethod(.Object)} )
 
-# ... is passed on to .preprocess_obs
-setMethod("initialize",signature="Obs",function(.Object,df,name="Obs",remove_cross_ins=0,pol=NA,alpha0=NA,av_dist=NA,...) { 
+# ... is passed on to preprocess_obs
+setMethod("initialize",signature="Obs",function(.Object,df,name=NA,remove_cross_ins=0,pol=NA,alpha0=NA,av_dist=NA,...) { 
     
     args<-list(...)
     args <- c(args,df=df,name=name,remove_cross_ins=remove_cross_ins,pol=pol,alpha0=alpha0,av_dist=av_dist)
@@ -451,8 +460,9 @@ setMethod("initialize",signature="Obs",function(.Object,df,name="Obs",remove_cro
     }
     .Object@df <- data_df
     
-    .Object <- .preprocess_obs(.Object,...)
-    .Object["obs_name"] <- as.factor(name)
+    .Object <- preprocess_obs(.Object,...)
+    if (is.null(data_df$obs_name))
+      .Object["obs_name"] <- as.factor(name)
     if(remove_cross_ins > 0) {
         .Object@df <- subset(.Object@df,sqrt(x^2 + y^2) > remove_cross_ins)
     }

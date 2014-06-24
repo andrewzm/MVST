@@ -27,7 +27,7 @@
 GMRF <- function(mu=NA,Q= sparseMatrix(i=c(1,2),j=c(1,2),x=4),intrinsic=0,n=NULL,t_axis=0,
                  rep=data.frame(),name="none") {
 
-  if(is.na(mu)) {
+  if(any(is.na(mu))) {
     mu <- matrix(0,nrow(Q),1)
   }
   stopifnot(nrow(mu) == nrow(Q))
@@ -87,13 +87,17 @@ GMRF_RW <- function(n = 10,order=1,precinc = 1,df=data.frame(),name="none") {
 
 #' @title Vector auto-regressive model with GMRF represenation
 #' 
-#' @description This function initialises a vector auto-regressive model and represents it as a Gaussian Markov Random Field with mean \code{mu} and precision matrix \code{Q}. This constructor differs from other GMRF constructors in that it takes function inputs to define temporally evolving characteristics. The default representation is \deqn{x_{k+1} = \mu_k + A_kx_k + B_k\beta_k + e_k} where \deqn{e_k \sim \mathcal{N}(0,Q_k)}. Note that in addition to covariates, a known mean \deqn{\mu_k} can be added, this can be omitted and replaced appropriately with entries in \deqn{B_k}. A multi-variate vector auto-regressive model can be speficied by letting \code{A_fun} and \code{Qw_fun} return matrices a multiple of the dimension of the underlying basis over which the GMRF is defined.
+#' @description This function initialises a vector auto-regressive model and represents it as a Gaussian Markov Random Field with mean \code{mu} and precision matrix \code{Q}. This constructor differs from other GMRF constructors in that it takes function inputs 
+#' to define temporally evolving characteristics. The default representation is \deqn{x_{k+1} = \mu_k + A_kx_k + B_k\beta_k + e_k} where 
+#' \eqn{e_k \sim \mathcal{N}(0,Q_k)}. Note that in addition to covariates, a known mean \eqn{\mu_k} can be added, this can be omitted and 
+#' replaced appropriately with entries in \eqn{B_k}. A multi-variate vector auto-regressive model can be speficied by letting 
+#' \code{A_fun} and \code{Qw_fun} return matrices a multiple of the dimension of the underlying basis over which the GMRF is defined.
 #'
-#' @param mu_fun function of time \deqn{k}, returns matrix of size \deqn{n}
-#' @param A_fun function of time \deqn{k}, returns sparse matrix of size \deqn{n\times n}
-#' @param B_fun function of time \deqn{k}, returns  sparse matrix of size \deqn{n\times m}
-#' @param Qw_fun function of time \deqn{k}, returns  sparse matrix of size \deqn{n\times n}
-#' @param Qb prior precision matrix of \deqn{\beta}; sparse matrix of size \deqn{m \times m}
+#' @param mu_fun function of time \eqn{k}, returns matrix of size \eqn{n}
+#' @param A_fun function of time \eqn{k}, returns sparse matrix of size \eqn{n\times n}
+#' @param B_fun function of time \eqn{k}, returns  sparse matrix of size \eqn{n\times m}
+#' @param Qw_fun function of time \eqn{k}, returns  sparse matrix of size \eqn{n\times n}
+#' @param Qb prior precision matrix of \eqn{\beta}; sparse matrix of size \eqn{m \times m}
 #' @param t_axis time axis of process
 #' @param name name of VAR
 #' @return Object of class VAR_Gauss which inherits from class \code{GMRF}.
@@ -186,14 +190,126 @@ Obs_poly <- function(pol_df,name="Obs_poly",alpha0=NA,av_dist=NA,...)  {
 }
 
 
+#' @title List of links
+#' 
+#' @description This function initialises an object of class \code{link_list} which is simply a list in which each object is restricted to be of class \code{link}.
+#' @param l a list of objects of class \code{link}.
+#' @return Object of class \code{link_list} (which inherits from class \code{list})
+#' @keywords Observations, incidence matrix
+#' @export
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#' data(icesat)
+#' data(surf_fe)
+#'
+#' ## First create observation object
+#' icesat_obs <- Obs(df=icesat,
+#'                  abs_lim = 5,
+#'                  avr_method = "median",
+#'                  box_size=100,
+#'                  name="icesat")
+#'
+#' ## Now create GMRF defined over some FE basis
+#' Mesh <- initFEbasis(p=surf_fe$p,
+#'                     t=surf_fe$t,
+#'                     M=surf_fe$M,
+#'                     K=surf_fe$K)
+#' 
+#' mu <- matrix(0,nrow(Mesh),1)
+#' Q <- sparseMatrix(i=1:nrow(surf_fe$p), j = 1:nrow(surf_fe$p), x = 1)
+#'
+#' my_GMRF <- GMRF(mu = mu, Q = Q,name="SURF",t_axis = 0:6)
+#' SURF <-GMRF_basis(G = my_GMRF, Basis = Mesh)
+#'
+#' L1 <- link(SURF,icesat_obs)
+#' e <- link_list(list(L1))
+#' }
 link_list <- function(l=NULL) {
+  if(!is.null(l))
+    stopifnot(all(sapply(l,function(s) is(s,"link"))))
   return(new("link_list",l=l))
 }
 
+#' @title List of blocks
+#' 
+#' @description This function initialises an object of class \code{block_list} which is simply a list in which each object is restricted to be of class \code{block}. A \code{block} 
+#' is also either of class \code{Obs} or class \code{process}.
+#' @param l a list of objects of class \code{block}.
+#' @return Object of class \code{block_list} (which inherits from class \code{list})
+#' @keywords Process blocks, observation blocks
+#' @export
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#' data(icesat)
+#' data(surf_fe)
+#'
+#' ## First create observation object
+#' icesat_obs <- Obs(df=icesat,
+#'                  abs_lim = 5,
+#'                  avr_method = "median",
+#'                  box_size=100,
+#'                  name="icesat")
+#'
+#' ## Now create GMRF defined over some FE basis
+#' Mesh <- initFEbasis(p=surf_fe$p,
+#'                     t=surf_fe$t,
+#'                     M=surf_fe$M,
+#'                     K=surf_fe$K)
+#' 
+#' mu <- matrix(0,nrow(Mesh),1)
+#' Q <- sparseMatrix(i=1:nrow(surf_fe$p), j = 1:nrow(surf_fe$p), x = 1)
+#'
+#' my_GMRF <- GMRF(mu = mu, Q = Q,name="SURF",t_axis = 0:6)
+#' SURF <-GMRF_basis(G = my_GMRF, Basis = Mesh)
+#'
+#' v <- block_list(list(O = icesat_obs, G = SURF))
+#' }
 block_list <- function(l=NULL) {
+  if(!is.null(l))
+    stopifnot(all(sapply(l,function(s) is(s,"block"))))
   return(new("block_list",l=l))
 }
 
+#' @title Graph
+#' 
+#' @description A graph is a collection of links (collected using \code{link_list}) and blocks (collected using \code{block_list}).
+#' @param e an object of class \code{link_list} containing all the edges in the graph.
+#' @param v an object of class \code{block_list} containing all the blocks in the graph.
+#' @return Object of class \code{Graph} 
+#' @keywords Process blocks, observation blocks, graph
+#' @export
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#' data(icesat)
+#' data(surf_fe)
+#'
+#' ## First create observation object
+#' icesat_obs <- Obs(df=icesat,
+#'                  abs_lim = 5,
+#'                  avr_method = "median",
+#'                  box_size=100,
+#'                  name="icesat")
+#'
+#' ## Now create GMRF defined over some FE basis
+#' Mesh <- initFEbasis(p=surf_fe$p,
+#'                     t=surf_fe$t,
+#'                     M=surf_fe$M,
+#'                     K=surf_fe$K)
+#' 
+#' mu <- matrix(0,nrow(Mesh),1)
+#' Q <- sparseMatrix(i=1:nrow(surf_fe$p), j = 1:nrow(surf_fe$p), x = 1)
+#'
+#' my_GMRF <- GMRF(mu = mu, Q = Q,name="SURF",t_axis = 0:6)
+#' SURF <-GMRF_basis(G = my_GMRF, Basis = Mesh)
+#'
+#' L1 <- link(SURF,icesat_obs)
+#' e <- link_list(list(L1))
+#' v <- block_list(list(O = icesat_obs, G = SURF))
+#' G <- new("Graph",e=e,v=v)
+#' }
 Graph <- function(e = new("link_list"),v = new("block_list")) {
   return(new("Graph",e=e,v=v))
 }
@@ -233,15 +349,24 @@ initGRBFbasis = function(x,y,std,nx,ny) {
   this_basis <- new("GRBFBasis", pars=pars, n=nrow(centres), fn=fn)
   return(this_basis)
 }
-initConstbasis = function(c) {
-  fn <- pars <- list()
-  fn[[1]] <- function(pars,s) {
-     return(pars$const) 
-  }
-  pars[[1]] <- list(const = c)
-  this_basis <- new("ConstBasis", pars=pars, n=1, fn=fn)
-  return(this_basis)
-}
+
+#' @title Initialise a finite element basis
+#' 
+#' @description This function initialises an object of class \code{FEBasis} which defines a set of 'radial `tent' basis functions over a pre-specified triangulation in 2-D
+#'
+#' @param p \code{n} \eqn{\times} 2 matrix of vertex locations.
+#' @param t \code{m} \eqn{\times} 3 matrix of triangulations. Each row identifies which rows of \code{p} make up each triangle.
+#' @param M \code{n} \eqn{\times} \code{n} mass matrix: \eqn{\langle \phi, \phi^T \rangle}.
+#' @param K \code{n} \eqn{\times} \code{n} stiffness matrix: \eqn{\langle \nabla\phi, \nabla\phi^T \rangle}.
+#' @return Object of class \code{FEBasis} 
+#' @keywords finite elements, basis functions
+#' @export
+#' @examples
+#' data(surf_fe)
+#' Mesh <- initFEbasis(p=surf_fe$p,
+#'                     t=surf_fe$t,
+#'                     M=surf_fe$M,
+#'                     K=surf_fe$K)
 initFEbasis = function(p,t,M,K) {
   fn <- pars <- list()
   pars$p <- p
@@ -459,7 +584,6 @@ setMethod("initialize",signature="Obs",function(.Object,df,name=NA,remove_cross_
         data_df <- df 
     }
     .Object@df <- data_df
-    
     .Object <- preprocess_obs(.Object,...)
     if (is.null(data_df$obs_name))
       .Object["obs_name"] <- as.factor(name)
@@ -569,6 +693,10 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
       }
       
       Cmats <- vector("list",Tn)
+      
+      if(any(diff(to@df$t) < 0)) stop("Can only do link using data which is ordered temporally. Please order the data and redo.")
+      
+      stopifnot(all(diff(to@df$t) >= 0))
       for(i in seq_along(t_axis)) {
         to_sub <- to
         to_sub@df <- subset(to@df,t==t_axis[i]) # find data points at this time point
