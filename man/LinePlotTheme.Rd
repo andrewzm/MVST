@@ -1,0 +1,20 @@
+\name{LinePlotTheme}
+\alias{LinePlotTheme}
+\title{Line-plot theme}
+\usage{
+LinePlotTheme()
+}
+\value{
+Object of class \code{ggplot}
+}
+\description{
+Formats a ggplot object for neat plotting.
+}
+\examples{
+\dontrun{
+X <- data.frame(x=runif(100),y = runif(100), z = runif(100))
+LinePlotTheme() + geom_point(data=X,aes(x,y,colour=z))
+}
+}
+\keyword{ggplot}
+
