@@ -25,13 +25,13 @@ Accounts for averaging over observations, to account for
 signal leakage with nearby observations. See details.
 }
 \details{
-Thie function sets the diffusion parameter \eqn{\alpha} in
+This function sets the diffusion parameter \eqn{\alpha} in
 the model \deqn{z = P(\alpha)y + e} where the matrix
 \eqn{P(\alpha)} is defined as \deqn{P^{(i,j)} = \left\{
 \begin{array}{ll} \alpha, & i \sim j, (n_i)\theta > 0.9 \\
 [2ex] 1 - (n_i)\theta & i = j, (n_i)\theta > 0.9 \\ [2ex]
 \displaystyle \frac{1}{(n_i)+1} & \textrm{otherwise}
-\end{array} \right.  }} where \eqn{n_i} denotes the number
+\end{array} \right.  } where \eqn{n_i} denotes the number
 of neighbours of observation \eqn{i} and \eqn{\sim} denotes
 `neighbour of'. The matrix describes the proportion of
 signal \eqn{n_i\alpha} which should be attributed to the

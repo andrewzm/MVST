@@ -241,6 +241,18 @@ setGeneric("Infer", function(Graph,...) standardGeneric("Infer"))
 #' @param alpha The diffusion coefficient. See details.
 #' @param av_dist The distance within which observations are assumed to be coupled.
 #' @return Object of class \code{Obj} with updated diffusion parameter \code{alpha0} and averaging matrix \code{P}.
+#' @details  This function sets the diffusion parameter \eqn{\alpha} in the model \deqn{z = P(\alpha)y + e} where the matrix \eqn{P(\alpha)} is defined
+#' as \deqn{P^{(i,j)} = \left\{ \begin{array}{ll} 
+#'                      \alpha, & i \sim j, (n_i)\theta > 0.9 \\ [2ex]
+#'                                          1 - (n_i)\theta & i = j, (n_i)\theta > 0.9 \\ [2ex]
+#'                                               \displaystyle \frac{1}{(n_i)+1} & \textrm{otherwise}
+#'                                                                       \end{array} \right.
+#'                                                                       }
+#' where \eqn{n_i} denotes the number of neighbours of observation \eqn{i} and \eqn{\sim} denotes `neighbour of'. 
+#' The matrix describes the proportion of signal \eqn{n_i\alpha} which should be attributed to the spatial regions associated with the 
+#' neighbouring observations. If \eqn{n_i\theta} exceeds 0.9 (indicative of poor localisation), the observation
+#' is assumed to be an equal average of itself and its neighbours. Two (observations are assigned as neighbours if their geometric 
+#' centres are distanced by less than \code{av_dist}.
 #' @keywords Observation, average
 #' @export
 #' @examples
