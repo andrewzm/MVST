@@ -19,9 +19,9 @@
 #'
 #' @docType package
 #' @useDynLib MVST
-#' @import Matrix
 #' @import ggplot2
 #' @import spam
+#' @import Matrix
 #' @importClassesFrom gpclib gpc.poly
 #' @importFrom raster raster
 #' @importFrom gpclib area.poly
