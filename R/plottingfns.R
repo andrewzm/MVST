@@ -268,7 +268,18 @@ DrawfromVoronoi <- function(Voronoi,col,p) {
   }
 }
 
+#' @title Line-plot theme
+#' 
+#' @description Formats a ggplot object for neat plotting.
+#'
+#' @return Object of class \code{ggplot}
+#' @keywords ggplot
 #' @export
+#' @examples
+#' \dontrun{
+#' X <- data.frame(x=runif(100),y = runif(100), z = runif(100))
+#' LinePlotTheme() + geom_point(data=X,aes(x,y,colour=z))
+#'}
 LinePlotTheme <- function() {
   g <- ggplot() + theme(panel.background = element_rect(fill='white', colour='black'),text = element_text(size=20),
                         panel.grid.major =  element_line(colour = "light gray", size = 0.05),
@@ -277,7 +288,18 @@ LinePlotTheme <- function() {
   return (g)
 }
 
+#' @title Empty-plot theme
+#' 
+#' @description Formats a ggplot object for plotting with no annotations/grids.
+#'
+#' @return Object of class \code{ggplot}
+#' @keywords ggplot
 #' @export
+#' @examples
+#' \dontrun{
+#' X <- data.frame(x=runif(100),y = runif(100), z = runif(100))
+#' EmptyTheme() + geom_point(data=X,aes(x,y,colour=z))
+#'}
 EmptyTheme <- function() {
   g <- ggplot() +  theme(panel.background = element_rect(fill='white', colour='white'),panel.grid=element_blank(),axis.ticks=element_blank(),
                          panel.grid.major=element_blank(),panel.grid.minor=element_blank(),axis.text.x=element_blank(),axis.text.y=element_blank())

@@ -37,6 +37,18 @@ RBF_filter <- function(data,si,varname="z",smooth_var=800^2) {
 #' @param var an array of marginal variances to consider
 #' @param theta an array of first-order auto-regressive parameters to consider in the model \eqn{x_{t+1} = \theta x_{t} + e_{t}}.
 #' @export
+#' @examples
+#' var_true <- 1
+#' kappa_true <- kappa_from_l(l=1700,nu=2)
+#' X <- data.frame(x = 3000*runif(100), y = 3000*runif(100))
+#' dd<- fields::rdist(X,X)
+#' K <- my_Matern(r=dd,nu=2,var=var_true,kappa=kappa_true)
+#' X$z <-  t(chol(K)) %*% rnorm(nrow(X))
+#' var_marg <- var(X["z"])
+#' var_search <- 10^(seq(log10(var_marg/100),log10(var_marg*100),length=100))
+#' rho_search=seq(100,4000,200)
+#' lk_fit <- lscale_from_Matern(X,rho=rho_search,var=var_search,nu=c(2))
+#' print(lk_fit$spat_df)
 lscale_from_Matern  <- function(data,rho=100,nu=3/2,var=1,theta = seq(-0.99,0.99,0.33)) {
   marg_spat <- matrix(0,length(rho),length(var))
   marg_temp <- NULL
