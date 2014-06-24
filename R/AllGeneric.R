@@ -247,7 +247,7 @@ setGeneric("Infer", function(Graph,...) standardGeneric("Infer"))
 #'                                          1 - (n_i)\theta & i = j, (n_i)\theta > 0.9 \\ [2ex]
 #'                                               \displaystyle \frac{1}{(n_i)+1} & \textrm{otherwise}
 #'                                                                       \end{array} \right.
-#'                                                                       }}
+#'                                                                       }
 #' where \eqn{n_i} denotes the number of neighbours of observation \eqn{i} and \eqn{\sim} denotes `neighbour of'. 
 #' The matrix describes the proportion of signal \eqn{n_i\alpha} which should be attributed to the spatial regions associated with the 
 #' neighbouring observations. If \eqn{n_i\theta} exceeds 0.9 (indicative of poor localisation), the observation
