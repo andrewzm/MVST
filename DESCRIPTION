@@ -16,7 +16,7 @@ Suggests:
     knitr
 Imports:
     Matrix,
-    linalg,
+    spam,
     digest,
     maptools,
     ggplot2,

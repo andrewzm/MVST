@@ -20,8 +20,8 @@
 #' @docType package
 #' @useDynLib MVST
 #' @import Matrix
-#' @import linalg
 #' @import ggplot2
+#' @import spam
 #' @importClassesFrom gpclib gpc.poly
 #' @importFrom raster raster
 #' @importFrom gpclib area.poly
