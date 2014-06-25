@@ -154,7 +154,7 @@ GMRF_basis <- function(G=new("GMRF"),Basis=new("Basis",pars=list(vars=data.frame
 #' @param df a data frame which should contain at least 5 entries, \code{x,y,t,z} and \code{std} which denote the horizontal, vertical and temporal indices of the observations, the value and error respectively. Alternatively this could be a path name.
 #' @param name the name of the observation process
 #' @param remove_cross_ins removes data outside a circle centred at zero with specified radius. Convenient when working with satellite data in polar stereographic projection when some cross-ins are detected.
-#' @param pol
+#' @param ... other arguments passed on to \code{preprocess_obs}
 #' @return Object of class \code{Obs} (which inherits from class \code{block} and is thus also a block)
 #' @keywords Observations, change of support, block
 #' @export

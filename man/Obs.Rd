@@ -18,7 +18,8 @@ Obs(df, name = "Obs", remove_cross_ins = 0, ...)
   working with satellite data in polar stereographic
   projection when some cross-ins are detected.}
 
-  \item{pol}{}
+  \item{...}{other arguments passed on to
+  \code{preprocess_obs}}
 }
 \value{
 Object of class \code{Obs} (which inherits from class

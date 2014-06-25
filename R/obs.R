@@ -8,7 +8,7 @@
 #' @param avr_method If \code{mean} then the mean value and mean error on a sub-grid are used to sub-sample the observations
 #' @param box_size The grid width over which the observations are averaged
 #' @param min_pts If a grid box contains less than \code{min_pts} it is marked as empty
-#'  @param ... Other parameters which are ignored
+#' @param ... Other parameters which are ignored
 #' @export
 preprocess_obs <- function(Obs.obj,std_lim=NA,abs_lim=NA,avr_method=NA,box_size=10,min_pts=4,...) {
   
