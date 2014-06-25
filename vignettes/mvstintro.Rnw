@@ -70,12 +70,11 @@ In this introductory vignette we will adopt a very simple approach to modelling 
 
 \section{Problem setup}
 
-For this example we will need the packages \texttt{Matrix, devtools, ggplot2, MVST} and \texttt{linalg}. The last two packages are available from the github page \texttt{http://github.com/andrwzm} and can be installed using the command \texttt{install\_git} from the package \texttt{devtools}. Please use the option \texttt{build\_vignettes = F} when calling \texttt{install\_git}. Once all packages and dependencies are installed we load them:
+For this example we will need the packages \texttt{Matrix, devtools, ggplot2} and \texttt{MVST}. The last package is available from the github page \texttt{http://github.com/andrewzm} and can be installed using the command \texttt{install\_git} from the package \texttt{devtools}. Please use the option \texttt{build\_vignettes = F} when calling \texttt{install\_git}. Once all packages and dependencies are installed we load them:
 
 <<lib-load>>=
 library(Matrix)
 library(ggplot2)
-library(linalg)
 library(MVST)
 @
 
