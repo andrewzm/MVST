@@ -14,15 +14,27 @@ The abstraction in an object-oriented framework has several advantages. In parti
 
 The package is still under development (and will always be), however it is in a good state to start being used by the end-user. A very simple hands-on tutorial on how to use the package can be seen in the accompanying vignette, while a full-blown application, containing 4 interacting spatio-temporal processes and 4 observations data sets, can be seen on our [project website](http://www.rates-antarctica.net/).
 		
-Usage
+Installation tips
 -------
 
+Some have found problems with installing in R > 3.0.2. Therefore I recommend using R3.0.2. 
+To install, first install load Hadley Wickham's package `devtools`. To install `devtools` in Linux you first need to get `libcurl4-openssl-dev`, in Ubuntu one would type `sudo apt-get install libcurl4-openssl-dev`.
 
-To install in R, first load Hadley Wickham's devtools and then in console type
+Once `devtools` is installed, enter R and in the console type
 	
 	install_git("https://www.github.com/andrewzm/MVST",build_vignettes=F,dependencies=T)
 
+Some have found problems with automatic dependency list generation by `devtools`. To counter this I recommend installing the problematic packages separately.
 
+If you are running an old Linux distro then you might have trouble installing rgdal. First you need to install `gdal`, and then `proj.4`. I encountered some difficulties but the following links provided some answers
+[](http://trac.osgeo.org/proj/ticket/153)
+[](http://lightningismyname.blogspot.co.uk/2010/10/fixing-errors-with-nan-c-const-and-gcc.html)
+Note that if you are a local user you will need to alter the LD_LIBRARY_PATH, e.g.
+
+`export LD_LIBRARY_PATH="/home/glacio/ggazm/gdal/lib/:$HOME/proj/lib"`
+
+Also, you will need to point the install.packages function in the right direction e.g.
+`install.packages("rgdal",configure.args=c('--with-proj-include=$HOME/proj4/include','--with-proj-lib=$HOME/proj4/lib'))`
 
 Contact:	Andrew Zammit-Mangion
 
