@@ -42,7 +42,7 @@
 \linespread{1}
 
 \title{Introducing the package \texttt{MVST}}
-\author{RATES}
+\author{Andrew Zammit-Mangion, University of Bristol, UK}
 
 \begin{document}
 
