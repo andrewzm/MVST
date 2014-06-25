@@ -1,6 +1,10 @@
 MVST
 =========
-Purpose:	An R-Software package to facilitate the implementation and study of multi-variate spatio-temporal models, primarily in environmental applications. 
+
+Purpose
+-------
+
+An R-Software package to facilitate the implementation and study of multi-variate spatio-temporal models, primarily in environmental applications. 
 		
 Details: The study of environmental phenomena, particularly those which evolve in both space and time, has become increasingly difficult due to the prolific nature of satellite data and the sheer scale of the space-time domain under consideration. Further, observations of different nature, such as point-referenced observations or observations with a large support (which take averages or aggregate readings) frequently need to be considered simultaneously. Further, one generally needs to consider more than one evolving phenomenon, which may be interacting with each other. Today there are methods and computational tools in place to harness these intrinsic difficulties. The purpose of this package is to wrap up theoretical results and linear algebraic tools to facilitate the study for the end-user.
 
@@ -10,9 +14,15 @@ The abstraction in an object-oriented framework has several advantages. In parti
 
 The package is still under development (and will always be), however it is in a good state to start being used by the end-user. A very simple hands-on tutorial on how to use the package can be seen in the accompanying vignette, while a full-blown application, containing 4 interacting spatio-temporal processes and 4 observations data sets, can be seen on our [project website](http://www.rates-antarctica.net/).
 		
-Usage:	To install in R, first load Hadley Wickham's devtools and then in console type
+Usage
+-------
+
+
+To install in R, first load Hadley Wickham's devtools and then in console type
 	
 	install_git("https://www.github.com/andrewzm/MVST",build_vignettes=F,dependencies=T)
+
+
 
 Contact:	Andrew Zammit-Mangion
 
