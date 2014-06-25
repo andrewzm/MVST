@@ -8,7 +8,7 @@ Computationally tractability in these types of problems is maintained by (i) ass
 
 The abstraction in an object-oriented framework has several advantages. In particular, any basis set can be associated with a statistical model. I have restricted the use to a finite element basis, however the methods can easily be extended to consider an EOF basis or a bisquare basis, the interface to the user would remain unchanged. A further interesting feature is the ability to deal with observations seamlessly, using a common interface, irrespective of their nature. For example, due to the inheritance structure one may use same command to plot observations, irrespective of their spatial support. In this package I harness the flexibility of Hadley Wickham's `ggplot2` package for plotting.
 
-The package is still under development (and will always be), however it is in a good state to start being used by the end-user. A very simple hands-on tutorial on how to use the package can be seen in the accompanying vignette, while a full-blown application, containing 4 interacting spatio-temporal processes and 4 observations data sets, can be seen on our project website `http://www.rates-antarctica.net/`.
+The package is still under development (and will always be), however it is in a good state to start being used by the end-user. A very simple hands-on tutorial on how to use the package can be seen in the accompanying vignette, while a full-blown application, containing 4 interacting spatio-temporal processes and 4 observations data sets, can be seen on our [project website](http://www.rates-antarctica.net/).
 		
 Usage:	To install in R, first load Hadley Wickham's devtools and then in console type
 	
