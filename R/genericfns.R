@@ -151,6 +151,7 @@ md5_fun <- function(fn,path) {
 #' x <- md5_wrapper(myfun2,2,myfun1)
 md5_cache <- function(path) {
  stopifnot(is.character(path))
+ dir.create(file.path(path), showWarnings = FALSE)
  md5 <- NA
 
  function(fn,...,print_output=F) {
@@ -181,8 +182,7 @@ md5_cache <- function(path) {
          cat("Data not found. Evaluating expression...",sep="\n")
          flush.console()
          X <- fn(...)
-         dir.create("~/cache", showWarnings = FALSE)
-         save(X,file=file.path("~/cache",paste0(md5,".rda")))
+         save(X,file=file.path(path,paste0(md5,".rda")))
      }
      if(print_output) cat(paste("md5 for this result is ",md5,sep=""),sep="\n")
      return(X)  
