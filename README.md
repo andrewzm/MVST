@@ -29,12 +29,13 @@ Some have found problems with automatic dependency list generation by `devtools`
 If you are running an old Linux distro then you might have trouble installing rgdal. First you need to install `gdal`, and then `proj.4`. I encountered some difficulties but the following links provided some answers
 [](http://trac.osgeo.org/proj/ticket/153)
 [](http://lightningismyname.blogspot.co.uk/2010/10/fixing-errors-with-nan-c-const-and-gcc.html)
-Note that if you are a local user you will need to alter the LD_LIBRARY_PATH, e.g.
-
-`export LD_LIBRARY_PATH="/home/glacio/ggazm/gdal/lib/:$HOME/proj/lib"`
+Note that if you are a local user you will need to alter the LD_LIBRARY_PATH, e.g. `export LD_LIBRARY_PATH="/home/glacio/ggazm/gdal/lib/:$HOME/proj/lib"`
 
 Also, you will need to point the install.packages function in the right direction e.g.
 `install.packages("rgdal",configure.args=c('--with-proj-include=$HOME/proj4/include','--with-proj-lib=$HOME/proj4/lib'))`
+
+License and contact
+---------------
 
 Contact:	Andrew Zammit-Mangion
 
