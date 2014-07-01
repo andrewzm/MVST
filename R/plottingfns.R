@@ -171,13 +171,6 @@ DrawGraph <- function(Q,fixed=NA)   {
   }
 }
 
-circleFun <- function(center = c(0,0),diameter = 1, npoints = 100){
-  r = diameter / 2
-  tt <- seq(0,2*pi,length.out = npoints)
-  xx <- center[1] + r * cos(tt)
-  yy <- center[2] + r * sin(tt)
-  return(data.frame(x = xx, y = yy))
-}
 
 
 plot_scale_bar <- function(g_orig,x=0,y=0,l=10)  {
@@ -488,22 +481,6 @@ get_ellipse <- function(data, fill){
 spy <-function(X) {
   Y <- which(t(X)!=0,arr.ind=TRUE)
   plot(Y[,1],-Y[,2],pch=".")
-}
-SH_for_ARC2 <- function(x,filename) {
-  ## Unfortunately this cannot be put in "Import" as it requires to be loaded in the Global Environment.
-  ## For this reason it's put in "suggest" list instead and loaded on demand
-  require(shapefiles)   
-  dd <- data.frame(Id=x$n,X=x$x*1000,Y=x$y*1000)
-  ddTable <- data.frame(Id=x$n,Name=x$n,Z=x$to_plot,X=x$x*1000,Y=x$y*1000)
-  ddShapefile <- convert.to.shapefile(dd, ddTable, "Id", 1)
-  write.shapefile(ddShapefile, filename, arcgis=T)  
-  
-  ddTable <- data.frame(Id=x$n,Name=x$n,Z=x$to_stipple,X=x$x*1000,Y=x$y*1000)
-  ddShapefile <- convert.to.shapefile(dd, ddTable, "Id", 1)
-  write.shapefile(ddShapefile, paste(filename,"_std",sep=""), arcgis=T)  
-  
-  
-  return(NULL)
 }
 OverlayPlot <- function(GG,GGstd = NULL,leg_title="",do_mesh=0,zlo = -0.6,zhi = 0.6,alphalo = 0.2, alphahi = 1) {
   GG$zlo = zlo
