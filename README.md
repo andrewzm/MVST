@@ -27,6 +27,7 @@ Once `devtools` is installed, enter R and in the console type
 Some have found problems with automatic dependency list generation by `devtools`. To counter this I recommend installing the problematic packages separately.
 
 If you are running an old Linux distro then you might have trouble installing `rgdal`, which you need only if you want to import TIF or TIFF files into your program. First you need to install `gdal`, and then `proj.4`. For `gdal` I suggest version 1.10.1 and for `proj.4` version 4.8.0. I encountered some difficulties with `proj.4` but the following links provided some answers
+
 [http://trac.osgeo.org/proj/ticket/153](http://trac.osgeo.org/proj/ticket/153)
 
 [http://lightningismyname.blogspot.co.uk/2010/10/fixing-errors-with-nan-c-const-and-gcc.html](http://lightningismyname.blogspot.co.uk/2010/10/fixing-errors-with-nan-c-const-and-gcc.html)
