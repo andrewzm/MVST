@@ -1,7 +1,7 @@
 setMethod("pred_variance_large",signature(Results="list",G="Graph"),function(Results,G) {
   
-  Olist <- .extractClass(G@v,"Obs")
-  Glist <- .extractClass(G@v,"process")
+  Olist <- extractClass(G@v,"Obs")
+  Glist <- extractClass(G@v,"process")
   
   C_full <- G@e[[1]]@Cmat
   Qobs <- getPrecision(Olist[[1]])
@@ -27,8 +27,8 @@ setMethod("pred_variance_large",signature(Results="list",G="Graph"),function(Res
 
 setMethod("pred_variance_large",signature(Results="matrix",G="Graph"),function(Results,G) {
   
-  Olist <- .extractClass(G@v,"Obs")
-  Glist <- .extractClass(G@v,"process")
+  Olist <- extractClass(G@v,"Obs")
+  Glist <- extractClass(G@v,"process")
   
   C_full <- G@e[[1]]@Cmat
   Qobs <- getPrecision(Olist[[1]])
@@ -45,8 +45,8 @@ setMethod("validate",signature(Results="list",G="Graph"),function(Results,G,sim_
   
   args <- list(...)
   
-  Olist <- .extractClass(G@v,"Obs")
-  Glist <- .extractClass(G@v,"process")
+  Olist <- extractClass(G@v,"Obs")
+  Glist <- extractClass(G@v,"process")
   
   C_full_test <- G@e[[1]]@Cmat
   Qobs_test <- getPrecision(Olist[[1]])
@@ -143,8 +143,8 @@ setMethod("validate",signature(Results="matrix",G="Graph"),function(Results,G,si
   
   args <- list(...)
   
-  Olist <- .extractClass(G@v,"Obs")
-  Glist <- .extractClass(G@v,"process")
+  Olist <- extractClass(G@v,"Obs")
+  Glist <- extractClass(G@v,"process")
   
   C_full_test <- G@e[[1]]@Cmat
   Qobs_test <- getPrecision(Olist[[1]])
@@ -277,7 +277,10 @@ setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mu
   return(C)
   
 })
-setMethod(".extractClass",signature(L="list",Cl = "character"),function(L,Cl) {
+
+#' @rdname extractClass
+#' @aliases extractClass,list-character-method
+setMethod("extractClass",signature(L="list",Cl = "character"),function(L,Cl) {
   types <- lapply(L,function(df) {return(is(df,Cl))})
   Outputlist <-L[which(types==1)]
   return(Outputlist)
@@ -304,8 +307,8 @@ setMethod(".exist",signature(L="link_list",to="block",from="block"),function(L,t
 #' @export
 setMethod("compress",signature(Graph="Graph"),function(Graph) {
   # Create ordering
-  Olist <- .extractClass(Graph@v,"Obs")
-  Glist <- .extractClass(Graph@v,"process")
+  Olist <- extractClass(Graph@v,"Obs")
+  Glist <- extractClass(Graph@v,"process")
   
   for(i in 1:length(Glist)) {
    if(class(Glist[[i]])=="GMRF_basis")
@@ -342,8 +345,8 @@ setMethod("setGMRF",signature(Graph="Graph_2nodes", obj="GMRF"),
 
 setMethod("Infer",signature(Graph="Graph_2nodes"),
           function(Graph,SW=0,Comb=NULL) {
-            Olist <- .extractClass(Graph@v,"Obs")
-            Glist <- .extractClass(Graph@v,"process")
+            Olist <- extractClass(Graph@v,"Obs")
+            Glist <- extractClass(Graph@v,"process")
             
             Obs <- Olist[[1]]
             Field <- Glist[[1]]
@@ -645,8 +648,8 @@ FindC_average_EOF  <- function(X,polygons,mulfun=1)  {
 #             } else {
 #               matlab_server <- NULL 
 #             }
-#             Olist <- .extractClass(Graph@v,"Obs")
-#             Glist <- .extractClass(Graph@v,"process")
+#             Olist <- extractClass(Graph@v,"Obs")
+#             Glist <- extractClass(Graph@v,"process")
 #             
 #             Obs <- Olist[[1]]
 #             Field <- Glist[[1]]

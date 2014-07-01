@@ -5,7 +5,7 @@ setMethod("getData",signature(.Object="Obs"),function(.Object) {
 #' @rdname getDf
 #' @aliases getDf,Graph-method
 setMethod("getDf",signature(.Object="Graph"),function(.Object) {
-  Olist <- .extractClass(.Object@v,"Obs")
+  Olist <- extractClass(.Object@v,"Obs")
   if(length(Olist)>1) stop("Only works with one observation for now")
   return(Olist[[1]]@df)
 })

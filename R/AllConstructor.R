@@ -479,7 +479,8 @@ setMethod("initialize",signature(.Object="VAR_Gauss"),
               for(i in 0:(Tn-1)) {
                 if(i == 0) {
                   #Q_beta_part <- t(A) %*% Qw %*% B_fun(i+1) - Qw %*% B_fun(i) # v1
-                  Q_beta_part <- t(A) %*% Qw %*% B_fun(i+1) - (Imat(n) - A %*% A) %*% Qw %*% B_fun(i) # v2
+                  #Q_beta_part <- t(A) %*% Qw %*% B_fun(i+1) - (Imat(n) - A %*% A) %*% Qw %*% B_fun(i) # v2
+                  Q_beta_part <- t(A) %*% Qw %*% B_fun(i+1) - (Qw - A %*% Qw %*% A) %*% B_fun(i) # v2
                 } else if (i == (Tn-1)) {
                   Q_beta_part <- rBind(Q_beta_part,- Qw %*% B_fun(i))
                 }  else {
@@ -487,7 +488,7 @@ setMethod("initialize",signature(.Object="VAR_Gauss"),
                 }
                 B_for_sum[[i+1]] <- t(B_fun(i)) %*% Qw %*% B_fun(i) 
               } 
-              B_for_sum[[1]] <- t(B_fun(0)) %*% Qw %*% (Imat(n) - A %*% A) %*% B_fun(0) # v2
+              B_for_sum[[1]] <- t(B_fun(0)) %*% (Qw - A %*% Qw %*% A) %*% B_fun(0) # v2
               Q_full <- cBind(Q_full,Q_beta_part)
               Q_full <- rBind(Q_full,cBind(t(Q_beta_part),Reduce("+", B_for_sum) + Qb))
             }

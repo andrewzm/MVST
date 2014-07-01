@@ -599,7 +599,8 @@ Build_AQA <- function(Qx,A,T) {
       Q <- rBind(Q,cBind(Zeromat(n,n*i),-QA, AQA, -AQ , Zeromat(n,((T-3)-i)*n)))
     }
   }
-  Q <- rBind(cBind(Qx, -AQ, Zeromat(n,(T-2)*n)),
+  Q <- #rBind(cBind(Qx, -AQ, Zeromat(n,(T-2)*n)),
+        rBind(cBind((Qx - A %*% Qx %*% A) + A %*% Qx %*% A, -AQ, Zeromat(n,(T-2)*n)),
              Q,
              cBind(Zeromat(n,n*(T-2)),-QA, Qx))
   return(Q)
