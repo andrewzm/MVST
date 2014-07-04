@@ -46,8 +46,8 @@ attribute_polygon <- function(df,shape_df) {
 #' info_df <- cbind(expand.grid(x=seq(0,1,0.1),y=seq(0,1,0.1)),z=runif(121))
 #' df$z <- attribute_data(df=df,info_df = info_df)
 attribute_data <- function(df,info_df,miss_value = 0,averaging_box=NA) {
-  xgrid <- unique(info_df$x)
-  ygrid <- unique(info_df$y)
+  xgrid <- sort(unique(info_df$x))
+  ygrid <- sort(unique(info_df$y))
   xdiff <- stat_mode(diff(xgrid))
   ydiff <- stat_mode(diff(ygrid))
   

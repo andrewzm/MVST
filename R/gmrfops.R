@@ -144,7 +144,7 @@ setMethod("sample_GMRF",signature="GMRF",function(G,L=NULL,reps=1,P=NULL) {
       
     }
   }
-  return(as.vector(x))
+  ifelse(reps==1, return(as.vector(x)), return(x))
 })
 
 Prec_from_lattice <- function(Grid,ds) {
