@@ -82,22 +82,8 @@ setMethod("setalpha",signature(.Object="Obs"),
             return(.Object)          })
 
 
-#### GENERIC FUNCTIONS ######
-#' @title Split data into training/testing groups
-#' @description \code{split_validation} takes an object of class \code{Obs} and returns a list of two objects of class \code{Obs}, where one object
-#' contains the training data and the other contains the validation data. If the data is spatio-temporal, the validation data can be chosen to be 
-#' co-located in space.
-#' @param .Object an object of class \code{Obs}.
-#' @param samples an integer identifying the number of observations to use for validation.
-#' @param common a flag which, if 1, indicates that validation data should be chosen to coincide spatially. This flag is not relevant if the
-#' data is not spatio-temporal.
-#' @param ... further arguments passed on to \code{subset}.
-#' @return a list of two objects of class \code{Obs}.
-#' @export
-#' @examples 
-#' data(icesat)
-#' icesat_obs <- Obs(df=icesat)
-#' O2 <- split_validation(icesat_obs,100,common=0, t > 0)
+#' @rdname split_validation
+#' @aliases split_validation,Obs-method
 setMethod("split_validation",signature = "Obs",function(.Object,samples,common=0,...) {
   y_tot <- getDf(.Object)
   y_tot$n <- 1:nrow(y_tot)

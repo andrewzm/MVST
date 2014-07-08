@@ -3,7 +3,7 @@
 \title{link}
 \usage{
 link(Obj1, Obj2, Cmat = NULL, mul_factor = NULL, mulfun = NULL,
-  n_grid = NULL, mask = NULL)
+  n_grid = NULL, mask = NULL, md5_wrapper = NULL)
 }
 \arguments{
   \item{Obj1}{object of class \code{process}.}

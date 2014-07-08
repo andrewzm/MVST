@@ -1,8 +1,13 @@
+\docType{methods}
 \name{setGMRF}
 \alias{setGMRF}
+\alias{setGMRF,Graph_2nodes,GMRF-method}
+\alias{setGMRF,Graph_2nodes-method}
 \title{Set GMRF}
 \usage{
 setGMRF(Graph, obj)
+
+\S4method{setGMRF}{Graph_2nodes,GMRF}(Graph, obj)
 }
 \arguments{
   \item{Graph}{object of class \code{Graph_2nodes}.}

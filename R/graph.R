@@ -1,4 +1,6 @@
-setMethod("pred_variance_large",signature(Results="list",G="Graph"),function(Results,G) {
+#' @rdname pred_variance_large
+#' @aliases pred_variance_large,list-Graph_2nodes-method
+setMethod("pred_variance_large",signature(Results="list",G="Graph_2nodes"),function(Results,G) {
   
   Olist <- extractClass(G@v,"Obs")
   Glist <- extractClass(G@v,"process")
@@ -24,8 +26,9 @@ setMethod("pred_variance_large",signature(Results="list",G="Graph"),function(Res
   return(Olist[[1]])  
 })
 
-
-setMethod("pred_variance_large",signature(Results="matrix",G="Graph"),function(Results,G) {
+#' @rdname pred_variance_large
+#' @aliases pred_variance_large,matrix-Graph_2nodes-method
+setMethod("pred_variance_large",signature(Results="matrix",G="Graph_2nodes"),function(Results,G) {
   
   Olist <- extractClass(G@v,"Obs")
   Glist <- extractClass(G@v,"process")
@@ -41,9 +44,9 @@ setMethod("pred_variance_large",signature(Results="matrix",G="Graph"),function(R
 })
 
 
-setMethod("validate",signature(Results="list",G="Graph"),function(Results,G,sim_obs=F,...) {
-  
-  args <- list(...)
+#' @rdname validate
+#' @aliases validate,list-Graph_2nodes-method
+setMethod("validate",signature(Results="list",G="Graph_2nodes"),function(Results,G,sim_obs=F) {
   
   Olist <- extractClass(G@v,"Obs")
   Glist <- extractClass(G@v,"process")
@@ -57,19 +60,6 @@ setMethod("validate",signature(Results="list",G="Graph"),function(Results,G,sim_
   eta <- last(Results$VB_results$eta)
   var_eta_post <- last(Results$VB_results$eta_var)
   b_test <- Olist[[1]]@df$fine_scale
-  #    batch_size <- 500
-  #    nbatches <- ceiling(nrow(C_full_test)/batch_size)
-  #    fun <- function(jj,C,X,Q,batch_size=1000) { 
-  #      this_batch <- ((jj-1)*batch_size+1):(min(jj*batch_size,nrow(C)))
-  #      mm <- t(cholsolve(Q,t(C[this_batch,]),perm=T,cholQp = X$Qpermchol, P = X$P))  # A backsolve is a transposed forward solve ...
-  #      vv <- rowSums(mm*C[this_batch,])
-  #      return(vv)      }
-  
-  if("matlab_server" %in% args) {
-    matlab_server <- args$matlab_server
-  } else {
-    matlab_server <- NULL
-  }
 
   if("Qpermchol" %in% names(Results)) {
       X <- list(Qpermchol = Results$Qpermchol, P = Results$P)
@@ -138,10 +128,9 @@ setMethod("validate",signature(Results="list",G="Graph"),function(Results,G,sim_
   return(val_results)
 })
 
-
-setMethod("validate",signature(Results="matrix",G="Graph"),function(Results,G,sim_obs=F,...) {
-  
-  args <- list(...)
+#' @rdname validate
+#' @aliases validate,matrix-Graph_2nodes-method
+setMethod("validate",signature(Results="matrix",G="Graph_2nodes"),function(Results,G,sim_obs=F) {
   
   Olist <- extractClass(G@v,"Obs")
   Glist <- extractClass(G@v,"process")
@@ -151,32 +140,11 @@ setMethod("validate",signature(Results="matrix",G="Graph"),function(Results,G,si
   
   x_mean <- apply(x_samp,1,mean)
   b_test <- Olist[[1]]@df$fine_scale
-  #    batch_size <- 500
-  #    nbatches <- ceiling(nrow(C_full_test)/batch_size)
-  #    fun <- function(jj,C,X,Q,batch_size=1000) { 
-  #      this_batch <- ((jj-1)*batch_size+1):(min(jj*batch_size,nrow(C)))
-  #      mm <- t(cholsolve(Q,t(C[this_batch,]),perm=T,cholQp = X$Qpermchol, P = X$P))  # A backsolve is a transposed forward solve ...
-  #      vv <- rowSums(mm*C[this_batch,])
-  #      return(vv)      }
-  
-  if("matlab_server" %in% args) {
-    matlab_server <- args$matlab_server
-  } else {
-    matlab_server <- NULL
-  }
   
   cat("Finding C %*% Sigma. This will take a while...",sep="\n")
   Results_detrended <- Results - matrix(x_mean,nrow(Results),ncol(Results))
   Sigma1 <- (C_full_test %*% Results_detrended) %*% t(C_full_test %*% Results_detrended)/(ncol(Results)-1)
   var1 <-  diag(Sigma1)
-  
-  # check
-  #S <- chol2inv(chol(Qtot))
-  #Sigma1 <- C_full_test %*% S %*% t(C_full_test)
-  # CHECK PASSED
-  
-  #var2 <-  1/as.vector(prec_delta * exp(-b_test*eta + b_test^2*var_eta_post/2))
-  #Sigma2 <- diag(var2)  # Sigma2 is the variance due to the small-scale variation
   
   var2 = 0
   Sigma2 <- Zeromat(nrow(Sigma1))
@@ -227,57 +195,6 @@ setMethod("validate",signature(Results="matrix",G="Graph"),function(Results,G,si
 
 
 
-setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mulfun = NULL, mask = NULL, n_grid=NULL) { 
-  
-  P <- Imat(nrow(obs))
-  if (is(obs,"Obs"))
-    if("P" %in% names(obs@args)) {
-      P <- obs@args$P
-    } 
-  
-  
-  
-  if (class(obs) == "data.frame") {
-    C <- FindC(basis@pars$p,
-               basis@pars$t,
-               list(obs$x,obs$y),method="C")
-  } else if(class(obs) ==  "Obs") {
-    C <-  FindC(basis@pars$p,
-                basis@pars$t,
-                list(obs@df$x,obs@df$y),method="C")
-    
-  } else if(class(obs) ==  "Obs_poly") {
-    if(is.null(n_grid)) {
-      warning("n_grid not specified, defaulting to a grid of 400 points for integration over footprints")
-      n_grid <- 400
-    }
-    
-    
-    if (is.null(mulfun))  mulfun <- 1
-      
-    C <- md5_wrapper(FindC_polyaverage,
-                     basis@pars$p,
-                     basis@pars$t,
-                     obs@pol,
-                     plotit=F,
-                     method="C",
-                     ds=n_grid,
-                     mulfun=mulfun)
-    
-    if (!(is.null(mask))) {
-      if(!(mask %in% names(getDf(basis)))) stop("Cannot find mask field in basis")
-      C[,which(!basis[mask])] <- 0 
-    }
-    
-    
-  }
-  
-  C <- P %*% C
-  
-  return(C)
-  
-})
-
 #' @rdname extractClass
 #' @aliases extractClass,list-character-method
 setMethod("extractClass",signature(L="list",Cl = "character"),function(L,Cl) {
@@ -304,7 +221,6 @@ setMethod(".exist",signature(L="link_list",to="block",from="block"),function(L,t
 
 #' @rdname compress
 #' @aliases compress,Graph-method
-#' @export
 setMethod("compress",signature(Graph="Graph"),function(Graph) {
   # Create ordering
   Olist <- extractClass(Graph@v,"Obs")
@@ -334,6 +250,10 @@ setMethod("compress",signature(Graph="Graph"),function(Graph) {
   Graph_reduced <- new("Graph_2nodes",e=e_reduced,v=v_reduced)
   return(Graph_reduced)
 })
+
+
+#' @rdname setGMRF
+#' @aliases setGMRF,Graph_2nodes-method
 setMethod("setGMRF",signature(Graph="Graph_2nodes", obj="GMRF"),
           function(Graph,obj) {
             for(i in 1:2) {
@@ -343,6 +263,9 @@ setMethod("setGMRF",signature(Graph="Graph_2nodes", obj="GMRF"),
             return(Graph)
           })
 
+
+#' @rdname Infer
+#' @aliases Infer,Graph_2nodes-method
 setMethod("Infer",signature(Graph="Graph_2nodes"),
           function(Graph,SW=0,Comb=NULL) {
             Olist <- extractClass(Graph@v,"Obs")
@@ -454,16 +377,79 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
 #' L1 <- link(SURF,icesat_obs)
 #' }
 link <- function(Obj1,Obj2,Cmat = NULL, mul_factor = NULL, mulfun = NULL,
-                 n_grid = NULL, mask = NULL) {
+                 n_grid = NULL, mask = NULL, md5_wrapper = NULL) {
   if (is(Obj1,"process") & is(Obj2,"Obs"))
   {
     .Object <- new("linkGO",from=Obj1,to=Obj2,Cmat = Cmat,
                    mul_factor = mul_factor,  mulfun = mulfun,  
-                   n_grid = n_grid, mask = mask)
+                   n_grid = n_grid, mask = mask,md5_wrapper=md5_wrapper)
   } else stop("Invalid object specification") 
   
   return(.Object)
 }
+
+setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mulfun = NULL, mask = NULL, n_grid=NULL,md5_wrapper=NULL) { 
+  
+  P <- Imat(nrow(obs))
+  if (is(obs,"Obs"))
+    if("P" %in% names(obs@args)) {
+      P <- obs@args$P
+    } 
+  
+  
+  
+  if (class(obs) == "data.frame") {
+    C <- FindC(basis@pars$p,
+               basis@pars$t,
+               list(obs$x,obs$y),method="C")
+  } else if(class(obs) ==  "Obs") {
+    C <-  FindC(basis@pars$p,
+                basis@pars$t,
+                list(obs@df$x,obs@df$y),method="C")
+    
+  } else if(class(obs) ==  "Obs_poly") {
+    if(is.null(n_grid)) {
+      warning("n_grid not specified, defaulting to a grid of 400 points for integration over footprints")
+      n_grid <- 400
+    }
+    
+    
+    if (is.null(mulfun))  mulfun <- 1
+
+    if(is.null(md5_wrapper)) {
+        C <- FindC_polyaverage(
+                         basis@pars$p,
+                         basis@pars$t,
+                         obs@pol,
+                         plotit=F,
+                         method="C",
+                         ds=n_grid,
+                         mulfun=mulfun)
+    } else {
+        stopifnot(class(md5_wrapper) == "function")
+        C <- md5_wrapper(FindC_polyaverage,
+                     basis@pars$p,
+                     basis@pars$t,
+                     obs@pol,
+                     plotit=F,
+                     method="C",
+                     ds=n_grid,
+                     mulfun=mulfun)
+    }
+    if (!(is.null(mask))) {
+      if(!(mask %in% names(getDf(basis)))) stop("Cannot find mask field in basis")
+      C[,which(!basis[mask])] <- 0 
+    }
+    
+    
+  }
+  
+  C <- P %*% C
+  
+  return(C)
+  
+})
+
 
 ## Find C matrix when observations are isolated points
 FindC <- function(p,tri,locs,method="R") {

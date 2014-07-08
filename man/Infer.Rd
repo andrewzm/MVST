@@ -1,8 +1,12 @@
+\docType{methods}
 \name{Infer}
 \alias{Infer}
+\alias{Infer,Graph_2nodes-method}
 \title{Infer}
 \usage{
 Infer(Graph, ...)
+
+\S4method{Infer}{Graph_2nodes}(Graph, SW = 0, Comb = NULL)
 }
 \arguments{
   \item{Graph}{object of class \code{Graph_2nodes}.}

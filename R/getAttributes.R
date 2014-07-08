@@ -64,11 +64,15 @@ setMethod("getMean",signature(.Object="GMRF_basis"),function(.Object) {
   return(getMean(.Object@G))
 })
 
+#' @rdname getC
+#' @aliases getC,Graph_2nodes-method
 setMethod("getC",signature(.Object="Graph_2nodes"),function(.Object) {
  return(getC(.Object@e[[1]])) 
 })
 
 
+#' @rdname getC
+#' @aliases getC,linkGO-method
 setMethod("getC",signature(.Object="linkGO"),function(.Object) {
   return(.Object@Cmat) 
 })
