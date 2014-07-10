@@ -790,6 +790,19 @@ approximateBisection<-function(weightMatrix,mode="matrix",minimumGain=1e-5){
   list(A,B)
 }
 
+
+#' @title Extract border
+#' @author Andrew Zammit Mangion
+#' @description The border is extracted from shapes supplied in x-y format
+#' @param df a data frame with fields \code{x} and \code{y}.
+#' @param delta the grid spacing.
+#' @details The algorithm works by finding how many neighbours a grid point has using \code{fields::fields.rdist.near}. A grid point with less than 4 neighbours is assumed to be a border point. For this algorithm to work, it is important that the shape is `full' and not contain any missing values.
+#' @return a subset of \code{df} containing the border points.
+#' @export
+#' @examples
+#' grid <- expand.grid(x = c(1:10), y = c(1:10))
+#' names(grid) = c("x","y")
+#' border_points <- border_from_grid_points(df=grid,delta=1)
 border_from_grid_points <- function(df,delta) {
   D <- fields.rdist.near(df[c("x","y")],df[c("x","y")],delta=delta)  # Find distance matrix
   D2 <- sparseMatrix(i=D$ind[,1],j=D$ind[,2],x=1)                        # See how many neighbours
