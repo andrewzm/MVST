@@ -376,19 +376,19 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
 #'
 #' L1 <- link(SURF,icesat_obs)
 #' }
-link <- function(Obj1,Obj2,Cmat = NULL, mul_factor = NULL, mulfun = NULL,
+link <- function(Obj1,Obj2,Cmat = NULL, mul_factor = NULL, mulfun = NULL, muldata=NULL,
                  n_grid = NULL, mask = NULL, md5_wrapper = NULL) {
   if (is(Obj1,"process") & is(Obj2,"Obs"))
   {
     .Object <- new("linkGO",from=Obj1,to=Obj2,Cmat = Cmat,
-                   mul_factor = mul_factor,  mulfun = mulfun,  
+                   mul_factor = mul_factor,  mulfun = mulfun,muldata=muldata,
                    n_grid = n_grid, mask = mask,md5_wrapper=md5_wrapper)
   } else stop("Invalid object specification") 
   
   return(.Object)
 }
 
-setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mulfun = NULL, mask = NULL, n_grid=NULL,md5_wrapper=NULL) { 
+setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mulfun = NULL, mask = NULL, n_grid=NULL, muldata = NULL, md5_wrapper=NULL) { 
   
   P <- Imat(nrow(obs))
   if (is(obs,"Obs"))
@@ -424,7 +424,8 @@ setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mu
                          plotit=F,
                          method="C",
                          ds=n_grid,
-                         mulfun=mulfun)
+                         mulfun=mulfun,
+                         muldata=muldata)
     } else {
         stopifnot(class(md5_wrapper) == "function")
         C <- md5_wrapper(FindC_polyaverage,
@@ -434,7 +435,8 @@ setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mu
                      plotit=F,
                      method="C",
                      ds=n_grid,
-                     mulfun=mulfun)
+                     mulfun=mulfun,
+                     muldata=muldata)
     }
     if (!(is.null(mask))) {
       if(!(mask %in% names(getDf(basis)))) stop("Cannot find mask field in basis")
@@ -504,7 +506,7 @@ FindC <- function(p,tri,locs,method="R") {
   
 }
 ## Like FindC_boxaverage2 butfor arbitrary polygons. Here ds is the number of points to use for integration
-FindC_polyaverage  <- function(p,tri,polygons,plotit=F,mulfun = 0,method="R",ds=400)  {
+FindC_polyaverage  <- function(p,tri,polygons,plotit=F,mulfun = 0,muldata=NULL,method="R",ds=400)  {
   if (plotit == T) dev.new()
   n <- dim(p)[1]
   m <- length(polygons)

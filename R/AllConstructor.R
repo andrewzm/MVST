@@ -667,7 +667,7 @@ setMethod("initialize",signature(.Object="link"), function(.Object,from=new("blo
 
 setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new("process"),to=new("Obs"),
                                                                 n_grid = NULL,Cmat = NULL, mul_factor = NULL, 
-                                                                mulfun = NULL, mask = NULL,
+                                                                mulfun = NULL, mask = NULL, muldata = NULL,
                                                                 md5_wrapper = NULL) {
   
   if(!is.null(Cmat)) {
@@ -708,7 +708,7 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
         if(nrow(to_sub)==0) {  # if no data points at this time point
           Cmats[[i]] <- matrix(0,0,n)  # create empty matrix
         } else {
-          Cmats[[i]] <- .find_inc_matrix(from@Basis,to_sub,mulfun = mulfun, mask = mask, n_grid = n_grid,
+          Cmats[[i]] <- .find_inc_matrix(from@Basis,to_sub,mulfun = mulfun, muldata = muldata, mask = mask, n_grid = n_grid,
                                          md5_wrapper = md5_wrapper) # otherwise compute the matrix
         }
         C <- Cmats[[i]]  # store incidence matrix at this time point
