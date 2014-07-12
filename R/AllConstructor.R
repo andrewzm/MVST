@@ -442,11 +442,11 @@ setMethod("initialize",signature(.Object = "GMRF_basis"),
                 # NEEDS TO BE FIXED
                 warning("Basis and GMRF not integral units of each other's dimensions (have covariates?), only merging first n frames")
                 nframes <- floor(nrow(G@rep) / nrow(Basis@pars$vars))
-                .Object@G@rep <- cbind.fill(G@rep[1:(nframes*nrow(Basis)),],Basis@pars$vars,data.frame(varnum=varnum))  
-                extra_items <- nrow(G@rep) %% nrow(Basis@pars$vars)
-                .Object@G@rep <- rbind.fill(.Object@G@rep,tail(G@rep,extra_items))
+                .Object@G@rep <- cbind.fill(getDf(G)[1:(nframes*nrow(Basis)),],getDf(Basis),data.frame(varnum=varnum[1:nrow(G)]))  
+                extra_items <- nrow(getDf(G)) %% nrow(getDf(Basis))
+                .Object@G@rep <- rbind.fill(getDf(.Object@G),tail(getDf(G),extra_items))
               } else {
-                .Object@G@rep <- cbind(G@rep,Basis@pars$vars,data.frame(varnum=varnum))  
+                .Object@G@rep <- cbind(getDf(G),getDf(Basis),data.frame(varnum=varnum))  
               }
             }
             callNextMethod(.Object,uid=.Object@G@uid)   # to initialise block (uid)
