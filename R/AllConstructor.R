@@ -439,7 +439,7 @@ setMethod("initialize",signature(.Object = "GMRF_basis"),
               varnum <- rep(expand.grid(1:nrow(Basis@pars$vars),1:nvars)[,2],length(t_axis))
               varnum <- c(varnum,rep(NA,nrow(G@rep) -nrow(G)))
               if(nrow(G@rep) %% nrow(Basis@pars$vars) > 0) {
-                # NEEDS TO BE FIXED
+                # NEEDS TO BE FIXED for when we have more covariates than 1 frame
                 warning("Basis and GMRF not integral units of each other's dimensions (have covariates?), only merging first n frames")
                 nframes <- floor(nrow(G@rep) / nrow(Basis@pars$vars))
                 .Object@G@rep <- cbind.fill(getDf(G)[1:(nframes*nrow(Basis)),],getDf(Basis),data.frame(varnum=varnum[1:nrow(G)]))  
