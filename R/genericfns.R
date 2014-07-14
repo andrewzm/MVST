@@ -231,11 +231,3 @@ basename_ext <- function(path) {
 remove_col <- function(df,colnames) {
   return(df[,!(names(df) %in% colnames)])  
 }
-
-cbind.fill<-function(...){
-        nm <- list(...)
-            nm<-lapply(nm, as.matrix)
-            n <- max(sapply(nm, nrow))
-            data.frame(do.call(cbind, lapply(nm, function (x)
-                                      rbind(x, matrix(, n-nrow(x), ncol(x))))))
-    }

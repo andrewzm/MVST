@@ -442,7 +442,7 @@ setMethod("initialize",signature(.Object = "GMRF_basis"),
                 # NEEDS TO BE FIXED for when we have more covariates than 1 frame
                 warning("Basis and GMRF not integral units of each other's dimensions (have covariates?), only merging first n frames")
                 nframes <- floor(nrow(G@rep) / nrow(Basis@pars$vars))
-                .Object@G@rep <- cbind.fill(getDf(G)[1:(nframes*nrow(Basis)),],getDf(Basis),data.frame(varnum=varnum[1:nrow(G)]))  
+                .Object@G@rep <- cbind(getDf(G)[1:(nframes*nrow(Basis)),],getDf(Basis),data.frame(varnum=varnum[1:nrow(G)]))  
                 extra_items <- nrow(getDf(G)) %% nrow(getDf(Basis))
                 .Object@G@rep <- rbind.fill(getDf(.Object@G),tail(getDf(G),extra_items))
               } else {
