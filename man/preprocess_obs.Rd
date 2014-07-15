@@ -16,7 +16,10 @@ preprocess_obs(Obs.obj, std_lim = NA, abs_lim = NA, avr_method = NA,
 
   \item{avr_method}{If \code{mean} then the mean value and
   mean error on a sub-grid are used to sub-sample the
-  observations}
+  observations. If \code{median} the median value and MAD
+  of the z-values are used for subsampling. If
+  \code{mean_no_std} or \code{median_no_std}, the error is
+  not computed ignored.}
 
   \item{box_size}{The grid width over which the
   observations are averaged}

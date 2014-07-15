@@ -7,6 +7,8 @@
 \usage{
 head(x, ...)
 
+head(x, ...)
+
 \S4method{head}{block}(x, ...)
 
 \S4method{head}{Basis}(x, ...)
@@ -15,13 +17,24 @@ head(x, ...)
   \item{x}{an MVST object}
 
   \item{...}{other parameters passed to \code{base::head}}
+
+  \item{x}{an MVST object}
+
+  \item{...}{other parameters passed to \code{base::head}}
 }
 \description{
 Short for \code{head(getDf())}. Returns the top of the
 object data frame which contains most information on the
 object, see \code{getDf} for details.
+
+Short for \code{head(getDf())}. Returns the top of the
+object data frame which contains most information on the
+object, see \code{getDf} for details.
 }
 \examples{
+data(icesat)
+icesat_obs <- Obs(df=icesat)
+head(icesat_obs,n=10)
 data(icesat)
 icesat_obs <- Obs(df=icesat)
 head(icesat_obs,n=10)

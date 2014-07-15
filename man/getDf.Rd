@@ -10,6 +10,8 @@
 \usage{
 getDf(.Object)
 
+getDf(.Object)
+
 \S4method{getDf}{Graph}(.Object)
 
 \S4method{getDf}{FEBasis}(.Object)
@@ -23,14 +25,25 @@ getDf(.Object)
 \arguments{
   \item{.Object}{object from which data frame will be
   extracted}
+
+  \item{.Object}{object from which data frame will be
+  extracted}
 }
 \description{
 Returns data frame from MVST block object. Can be used on
 objects of class \code{FEBasis,GMRF} and \code{Obs}. If
 used on an object of class \code{Graph}, the observation
 data frame is returned.
+
+Returns data frame from MVST block object. Can be used on
+objects of class \code{FEBasis,GMRF} and \code{Obs}. If
+used on an object of class \code{Graph}, the observation
+data frame is returned.
 }
 \examples{
+data(icesat)
+icesat_obs <- Obs(df=icesat)
+df <- getDf(icesat_obs)
 data(icesat)
 icesat_obs <- Obs(df=icesat)
 df <- getDf(icesat_obs)

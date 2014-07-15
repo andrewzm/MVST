@@ -5,7 +5,8 @@
 #' @param Obs.obj The observation object
 #' @param std_lim Values with error higher than \code{std_lim} are deleted
 #' @param abs_lim Values which are bigger than \code{abs_lim} are deleted
-#' @param avr_method If \code{mean} then the mean value and mean error on a sub-grid are used to sub-sample the observations
+#' @param avr_method If \code{mean} then the mean value and mean error on a sub-grid are used to sub-sample the observations. If \code{median} the median value and MAD of the z-values are used
+#' for subsampling. If \code{mean_no_std} or \code{median_no_std}, the error is not computed ignored.
 #' @param box_size The grid width over which the observations are averaged
 #' @param min_pts If a grid box contains less than \code{min_pts} it is marked as empty
 #' @param ... Other parameters which are ignored
@@ -29,7 +30,7 @@ preprocess_obs <- function(Obs.obj,std_lim=NA,abs_lim=NA,avr_method=NA,box_size=
   
   
   if(!is.na(avr_method)) {
-    stopifnot(avr_method %in% c("mean","median"))
+    stopifnot(avr_method %in% c("mean","median","mean_no_std","median_no_std"))
     
     breaksx <- seq(min(Obs.obj@df$x)-1,max(Obs.obj@df$x)+1,by=box_size)
     breaksy <- seq(min(Obs.obj@df$y)-1,max(Obs.obj@df$y)+1,by=box_size)
@@ -40,9 +41,9 @@ preprocess_obs <- function(Obs.obj,std_lim=NA,abs_lim=NA,avr_method=NA,box_size=
     averaging_fun <- function(z) {
       x <- z[1]  
       if(length(z) > min_pts) {
-        if(avr_method=="median") {
+        if(avr_method %in% c("median","median_no_std")) {
           x <- median(z)
-        } else if(avr_method=="mean") {
+        } else if(avr_method  %in% c("mean","mean_no_std") ) {
           x <- mean(z)
         }
       }
@@ -62,7 +63,11 @@ preprocess_obs <- function(Obs.obj,std_lim=NA,abs_lim=NA,avr_method=NA,box_size=
     }
     
     boxes <- group_by(Obs.obj@df, box_x,box_y,t)
-    Obs.obj@df <- data.frame(summarise(boxes,x=round(mean(x)),y=round(mean(y)),z2=averaging_fun(z),std=std_fun(z,std)))
+    if(avr_method %in% c("median","mean")) { 
+      Obs.obj@df <- data.frame(summarise(boxes,x=round(mean(x)),y=round(mean(y)),z2=averaging_fun(z),std=std_fun(z,std)))
+    } else if(avr_method %in% c("median_no_std","mean_no_std")) {
+      Obs.obj@df <- data.frame(summarise(boxes,x=round(mean(x)),y=round(mean(y)),z2=averaging_fun(z)))
+    }
     Obs.obj@df$z <- Obs.obj@df$z2
     Obs.obj@df$z2 <- NULL
     

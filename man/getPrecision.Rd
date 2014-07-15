@@ -8,6 +8,8 @@
 \usage{
 getPrecision(.Object)
 
+getPrecision(.Object)
+
 \S4method{getPrecision}{Obs}(.Object)
 
 \S4method{getPrecision}{GMRF}(.Object)
@@ -17,11 +19,18 @@ getPrecision(.Object)
 \arguments{
   \item{.Object}{object from which precision matrix will be
   extracted}
+
+  \item{.Object}{object from which precision matrix will be
+  extracted}
 }
 \description{
 Returns precition matrix from MVST object.
+
+Returns precition matrix from MVST object.
 }
 \examples{
+my_RW <- GMRF_RW(n=10, order=1, precinc =2, name="my_first_RW")
+Q <- getPrecision(my_RW)
 my_RW <- GMRF_RW(n=10, order=1, precinc =2, name="my_first_RW")
 Q <- getPrecision(my_RW)
 }

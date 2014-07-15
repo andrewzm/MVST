@@ -7,6 +7,8 @@
 \usage{
 getMean(.Object)
 
+getMean(.Object)
+
 \S4method{getMean}{GMRF}(.Object)
 
 \S4method{getMean}{GMRF_basis}(.Object)
@@ -14,11 +16,18 @@ getMean(.Object)
 \arguments{
   \item{.Object}{object from which mean vector will be
   extracted}
+
+  \item{.Object}{object from which mean vector will be
+  extracted}
 }
 \description{
 Returns the mean from MVST object.
+
+Returns the mean from MVST object.
 }
 \examples{
+my_RW <- GMRF_RW(n=10, order=1, precinc =2, name="my_first_RW")
+mu <- getMean(my_RW)
 my_RW <- GMRF_RW(n=10, order=1, precinc =2, name="my_first_RW")
 mu <- getMean(my_RW)
 }

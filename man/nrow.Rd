@@ -9,6 +9,8 @@
 \usage{
 nrow(x)
 
+nrow(x)
+
 \S4method{nrow}{GMRF}(x)
 
 \S4method{nrow}{GMRF_basis}(x)
@@ -19,6 +21,8 @@ nrow(x)
 }
 \arguments{
   \item{x}{an MVST object}
+
+  \item{x}{an MVST object}
 }
 \description{
 Returns the size of the object, where the 'size' is
@@ -27,8 +31,18 @@ determined by the class of the object being passed. For a
 variables of the associated MRF, for an \code{FEBasis} this
 is the number of vertices in the mesh, and for an
 \code{Obs} this is the number of observations.
+
+Returns the size of the object, where the 'size' is
+determined by the class of the object being passed. For a
+\code{GMRF} and \code{GMRF_basis}, this is the number of
+variables of the associated MRF, for an \code{FEBasis} this
+is the number of vertices in the mesh, and for an
+\code{Obs} this is the number of observations.
 }
 \examples{
+data(icesat)
+icesat_obs <- Obs(df=icesat)
+nrow(icesat_obs)
 data(icesat)
 icesat_obs <- Obs(df=icesat)
 nrow(icesat_obs)

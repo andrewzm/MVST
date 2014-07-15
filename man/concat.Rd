@@ -9,6 +9,8 @@
 \usage{
 concat(...)
 
+concat(...)
+
 \S4method{concat}{block}(...)
 
 \S4method{concat}{GMRF}(...)
@@ -19,13 +21,22 @@ concat(...)
 }
 \arguments{
   \item{...}{a series of \code{MVST} objects}
+
+  \item{...}{a series of \code{MVST} objects}
 }
 \description{
 Concatenates MVST objects of the same class together. This
 is primarily used to join up \code{GMRF_basis} blocks and
 \code{Obs} blocks together.
+
+Concatenates MVST objects of the same class together. This
+is primarily used to join up \code{GMRF_basis} blocks and
+\code{Obs} blocks together.
 }
 \examples{
+data(icesat)
+icesat_obs <- Obs(df=icesat)
+icesat_2x <- concat(icesat_obs,icesat_obs)
 data(icesat)
 icesat_obs <- Obs(df=icesat)
 icesat_2x <- concat(icesat_obs,icesat_obs)
