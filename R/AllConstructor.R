@@ -688,6 +688,7 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
       if(!(round(nvariates) == nvariates)) stop("Stopping: Cannot calculate number of variates. Are they on the same basis?")
       if(nvariates < 1) stop("Stopping: Cannot calculate number of variates")
       if(nvariates > 1) cat("Multi-variate system detected",sep="\n")
+      if(!all(unique(getDf(to)$t) %in% unique(getDf(from)$t))) stop("Cannot have observations which exceed the modelling boundary in t_axis")
       if(!(is.null(mul_factor))) {
         if(!(length(mul_factor) == nvariates)) stop("Need as many mul_factors as variates")
       } else {
