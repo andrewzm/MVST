@@ -482,6 +482,10 @@ spy <-function(X) {
   Y <- which(t(X)!=0,arr.ind=TRUE)
   plot(Y[,1],-Y[,2],pch=".")
 }
+
+#' @title Overla Plot
+#' @description Still to be documented
+#' @export
 OverlayPlot <- function(GG,GGstd = NULL,leg_title="",do_mesh=0,zlo = -0.6,zhi = 0.6,alphalo = 0.2, alphahi = 1) {
   GG$zlo = zlo
   GG$zhi = zhi
