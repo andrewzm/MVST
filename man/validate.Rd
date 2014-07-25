@@ -86,7 +86,7 @@ val_results <- validate(Results,G_reduced,sim_obs=F)
 }
 \references{
 Sahu, S. K., & Mardia, K. V. (2005). A Bayesian kriged
-Kalman model for short-€term forecasting of air pollution
+Kalman model for short-term forecasting of air pollution
 levels. Journal of the Royal Statistical Society: Series C
 (Applied Statistics), 54(1), 223-244. Bastos, L. S. and
 O'Hagan, A. (2008). Diagnostics for Gaussian process

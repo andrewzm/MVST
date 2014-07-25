@@ -467,7 +467,7 @@ setGeneric("split_validation", function(.Object,samples,common,...) standardGene
 #' @param sim_obs if set to \code{T}, the observations are ignored and `ideal' simulated observations are used instead. This option can be used to effect a `Turing test', where the real-data case and the ideal case can be compared side-by-side. 
 #' @return A data frame with the predictive statistics as described above.
 #' @keywords predictive variance, validation
-#' @references Sahu, S. K., & Mardia, K. V. (2005). A Bayesian kriged Kalman model for short-Äêterm forecasting of air pollution levels. Journal of the Royal Statistical Society: Series C (Applied Statistics), 54(1), 223-244. Bastos, L. S. and O'Hagan, A. (2008). Diagnostics for Gaussian process emulators. Technometrics 51, 425-438.
+#' @references Sahu, S. K., & Mardia, K. V. (2005). A Bayesian kriged Kalman model for short-term forecasting of air pollution levels. Journal of the Royal Statistical Society: Series C (Applied Statistics), 54(1), 223-244. Bastos, L. S. and O'Hagan, A. (2008). Diagnostics for Gaussian process emulators. Technometrics 51, 425-438.
 #' @export
 #' @examples
 #' require(Matrix)
