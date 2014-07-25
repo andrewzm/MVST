@@ -8,24 +8,11 @@
 \usage{
 plot_interp(x, y, ds, ...)
 
-plot_interp(x, y, ds, ...)
-
 \S4method{plot_interp}{FEBasis,character}(x, y, ds = 40, ...)
 
 \S4method{plot}{FEBasis,ANY}(x, y, ...)
 }
 \arguments{
-  \item{x}{a Mesh object}
-
-  \item{y}{a character indicated which column to plot}
-
-  \item{ds}{the resolution of the plot (defaulted to 40 x
-  40)}
-
-  \item{max}{upperbound on colour scale}
-
-  \item{min}{lowerbound on colour scale}
-
   \item{x}{a Mesh object}
 
   \item{y}{a character indicated which column to plot}
@@ -65,22 +52,12 @@ plot_interp(x, y, ds, ...)
 }
 \value{
 a ggplot2 object
-
-a ggplot2 object
 }
 \description{
 This function takes a Mesh and a column name in the mesh,
 to generate an interpolated field of the indicated column
-
-This function takes a Mesh and a column name in the mesh,
-to generate an interpolated field of the indicated column
 }
 \examples{
-\dontrun{
-data(surf_fe)
-Mesh <- initFEbasis(p=surf_fe$p, t = surf_fe$t, M = surf_fe$M, K = surf_fe$K)
-Mesh["z"] <- sin(Mesh["x"]/1000)*cos(Mesh["y"]/1000)
-g <- plot_interp(Mesh,"z",ds=200)}
 \dontrun{
 data(surf_fe)
 Mesh <- initFEbasis(p=surf_fe$p, t = surf_fe$t, M = surf_fe$M, K = surf_fe$K)

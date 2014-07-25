@@ -7,8 +7,6 @@
 \usage{
 tail(x, ...)
 
-tail(x, ...)
-
 \S4method{tail}{block}(x, ...)
 
 \S4method{tail}{Basis}(x, ...)
@@ -17,24 +15,13 @@ tail(x, ...)
   \item{x}{an MVST object}
 
   \item{...}{other parameters passed to \code{base::tail}}
-
-  \item{x}{an MVST object}
-
-  \item{...}{other parameters passed to \code{base::tail}}
 }
 \description{
 Short for \code{tail(getDf())}. Returns the tail of the
 object data frame which contains most information on the
 object, see \code{getDf} for details.
-
-Short for \code{tail(getDf())}. Returns the tail of the
-object data frame which contains most information on the
-object, see \code{getDf} for details.
 }
 \examples{
-data(icesat)
-icesat_obs <- Obs(df=icesat)
-tail(icesat_obs,n=10)
 data(icesat)
 icesat_obs <- Obs(df=icesat)
 tail(icesat_obs,n=10)

@@ -10,8 +10,6 @@
 \usage{
 subset(x, ...)
 
-subset(x, ...)
-
 \S4method{subset}{Basis}(x, ...)
 
 \S4method{subset}{GMRF_basis}(x, ...)
@@ -27,36 +25,16 @@ subset(x, ...)
 
   \item{...}{relations pertaining to the data frame within
   the MVST object}
-
-  \item{x}{the MVST object}
-
-  \item{...}{relations pertaining to the data frame within
-  the MVST object}
 }
 \value{
-object of the same class as \code{x} unless \code{x} is a
-mesh, in which case a data frame is returned.
-
 object of the same class as \code{x} unless \code{x} is a
 mesh, in which case a data frame is returned.
 }
 \description{
 This function can be used to subset observations, meshes,
 and latent fields in the usual manner of \code{subset}.
-
-This function can be used to subset observations, meshes,
-and latent fields in the usual manner of \code{subset}.
 }
 \examples{
-data(icesat)
-icesat_obs <- Obs(df=icesat)
-icesat_sub <- subset(icesat_obs,t==3)
-print(class(icesat_sub))
-
-data(surf_fe)
-Mesh <- initFEbasis(p=surf_fe$p, t = surf_fe$t, M = surf_fe$M, K = surf_fe$K)
-Mesh_sub <- subset(Mesh,x < 0)
-print(class(Mesh_sub))
 data(icesat)
 icesat_obs <- Obs(df=icesat)
 icesat_sub <- subset(icesat_obs,t==3)
