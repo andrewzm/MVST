@@ -122,9 +122,8 @@ setMethod("sample_GMRF",signature="VAR_Gauss",function(G,L=NULL,reps=1,P=NULL) {
 
 setMethod("sample_GMRF",signature="GMRF",function(G,L=NULL,reps=1,P=NULL) {
   n = G@n
-  x <- matrix(0,n,reps)
   z <- matrix(rnorm(n*reps),n,reps)
-  mu <- getMean(G)
+  mu <- c(getMean(G))
   if(is.null(L)) {
     L <-t(chol(G@Q))
     P <-NULL
@@ -132,20 +131,41 @@ setMethod("sample_GMRF",signature="GMRF",function(G,L=NULL,reps=1,P=NULL) {
   
   # Algorithm 2.4, Rue and Held
   if (is.null(P)) {
-    for (i in (1:reps)) {
-      v <- solve(t(L),z[,i])
-      x[,i] <- matrix(mu + v)
-    }
+    v <- solve(t(L),z)
+    x <- mu + v
   } else {
-    for (i in (1:reps)) {
-      
-      v <- P %*% solve(t(L), z[,i])
-      x[,i] <- matrix(mu + v)
-      
-    }
+    v <-  P %*% solve(t(L),z)
+    x <- mu + v
   }
   ifelse(reps==1, return(as.vector(x)), return(x))
 })
+
+
+### Loopy version
+# setMethod("sample_GMRF",signature="GMRF",function(G,L=NULL,reps=1,P=NULL) {
+#   n = G@n
+#   x <- matrix(0,n,reps)
+#   z <- matrix(rnorm(n*reps),n,reps)
+#   mu <- getMean(G)
+#   if(is.null(L)) {
+#     L <-t(chol(G@Q))
+#     P <-NULL
+#   }
+#   
+#   # Algorithm 2.4, Rue and Held
+#   if (is.null(P)) {
+#     for (i in (1:reps)) {
+#       v <- solve(t(L),z[,i])
+#       x[,i] <- matrix(mu + v)
+#     }
+#   } else {
+#     for (i in (1:reps)) {
+#       v <- P %*% solve(t(L), z[,i])
+#       x[,i] <- matrix(mu + v)
+#     }
+#   }
+#   ifelse(reps==1, return(as.vector(x)), return(x))
+# })
 
 Prec_from_lattice <- function(Grid,ds) {
   n <- nrow(Grid)

@@ -514,9 +514,21 @@ setGeneric("split_validation", function(.Object,samples,common,...) standardGene
 #' val_results <- validate(Results,G_reduced,sim_obs=F)
 setGeneric("validate", function(Results,G,sim_obs=F,...) standardGeneric("validate"))
 
+#' @title Sample from a GMRF
+#' @description Takes a GMRF object and, possibly, associated permutation matrix and Cholesky factor of permuted precision matrix, to generate
+#' samples.
+#' @param G object of class \code{GMRF}
+#' @param L Cholesky factor of the precision matrix, if \code{P} is \code{NULL} then this is treated as the factor of an unpermuted matrix
+#' @param reps number of samples to generate
+#' @param P permutation matrix
+#' @return a matrix of size \code{n} by \code{reps}
+#' @export
+#' @examples
+#' G <- GMRF_RW()
+#' G@Q <- getPrecision(G) + 0.01*Imat(nrow(G))
+setGeneric("sample_GMRF", function(G,L=NULL,reps=1,P=NULL) standardGeneric("sample_GMRF"))
 
 setGeneric(".exist", function(L,to,from) standardGeneric(".exist"))
 setGeneric("getData", function(.Object) standardGeneric("getData"))
-setGeneric("sample_GMRF", function(G,L=NULL,reps=1,P=NULL) standardGeneric("sample_GMRF"))
 setGeneric("basisinterp", function(G,s,weights) standardGeneric("basisinterp"))
 setGeneric(".find_inc_matrix",  function(basis,obs,mulfun, mask, n_grid, muldata, md5_wrapper) standardGeneric(".find_inc_matrix"))
