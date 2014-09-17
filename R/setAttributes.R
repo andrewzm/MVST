@@ -84,3 +84,18 @@ attribute_data <- function(df,info_df,miss_value = 0,averaging_box=NA) {
   
 }
 
+
+#' @rdname setPrecision
+#' @aliases setPrecision,GMRF-method
+setMethod("setPrecision",signature(.Object="GMRF"),function(.Object,Q) {
+  .Object@Q <- Q
+  .Object
+})
+
+#' @rdname setPrecision
+#' @aliases setPrecision,GMRF_basis-method
+setMethod("setPrecision",signature(.Object="GMRF_basis"),function(.Object,Q) {
+  .Object@G <- setPrecision(.Object@G,Q)
+  .Object
+})
+

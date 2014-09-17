@@ -68,13 +68,25 @@ setGeneric("getDf", function(.Object) standardGeneric("getDf"))
 
 
 #' @title Get precision matrix
-#' @description Returns precition matrix from MVST object. 
+#' @description Returns precision matrix from MVST object. 
 #' @param .Object object from which precision matrix will be extracted
 #' @export
 #' @examples 
 #' my_RW <- GMRF_RW(n=10, order=1, precinc =2, name="my_first_RW")
 #' Q <- getPrecision(my_RW)
 setGeneric("getPrecision", function(.Object) standardGeneric("getPrecision"))
+
+#' @title Set precision matrix
+#' @description Updates precision matrix from MVST object. 
+#' @param .Object object whose precision matrix will be changed
+#' @param new precision matrix
+#' @export
+#' @examples 
+#' my_RW <- GMRF_RW(n=10, order=1, precinc =2, name="my_first_RW")
+#' Q <- getPrecision(my_RW)
+#' my_RW2 <- setPrecision(my_RW,Q + Imat(n=10))
+#' Q2 <- getPrecision(my_RW2)
+setGeneric("setPrecision", function(.Object,Q) standardGeneric("setPrecision"))
 
 #' @title Get mean vector
 #' @description Returns the mean from MVST object. 
@@ -525,7 +537,8 @@ setGeneric("validate", function(Results,G,sim_obs=F,...) standardGeneric("valida
 #' @export
 #' @examples
 #' G <- GMRF_RW()
-#' G@Q <- getPrecision(G) + 0.01*Imat(nrow(G))
+#' G <- setPrecision(G, getPrecision(G) + 0.01*Imat(nrow(G)))
+#' X <- sample_GMRF(G,reps=10)
 setGeneric("sample_GMRF", function(G,L=NULL,reps=1,P=NULL) standardGeneric("sample_GMRF"))
 
 setGeneric(".exist", function(L,to,from) standardGeneric(".exist"))
