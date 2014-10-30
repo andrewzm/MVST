@@ -42,7 +42,7 @@ RBF_filter <- function(data,si,varname="z",smooth_var=800^2) {
 #' kappa_true <- kappa_from_l(l=1700,nu=2)
 #' X <- data.frame(x = 3000*runif(100), y = 3000*runif(100))
 #' dd<- fields::rdist(X,X)
-#' K <- my_Matern(r=dd,nu=2,var=var_true,kappa=kappa_true)
+#' K <- Matern(r=dd,nu=2,var=var_true,kappa=kappa_true)
 #' X$z <-  t(chol(K)) %*% rnorm(nrow(X))
 #' var_marg <- var(X["z"])
 #' var_search <- 10^(seq(log10(var_marg/100),log10(var_marg*100),length=100))
@@ -84,7 +84,7 @@ lscale_from_Matern  <- function(data,rho=100,nu=3/2,var=1,theta = seq(-0.99,0.99
       kappa = kappa_from_l(rho[i],nu_sel)
       for(h in t_axis) {
         sub_data <- subset(data, t == tt[h])
-        K_norm <- my_Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
+        K_norm <- Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
         diag(K_norm) <- 1
         L_norm[[h]] <- chol(K_norm) # Cholesky of normalised covariance matrix
         Kinv_norm <- chol2inv(L_norm[[h]]) # normalised precision matrix
@@ -102,7 +102,7 @@ lscale_from_Matern  <- function(data,rho=100,nu=3/2,var=1,theta = seq(-0.99,0.99
       #           for(j in 1:length(var))
       #           for(h in t_axis) {
       #             sub_data <- subset(data, t == tt[h])
-      #             K <- var[j]*my_Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
+      #             K <- var[j]*Matern(r=dist_space[[h]],nu=nu_sel,var=1,kappa=kappa)
       #             diag(K) <- diag(K)*2
       #             L <- chol(K) # Cholesky of normalised covariance matrix
       #             Kinv <- chol2inv(L) # normalised precision matrix

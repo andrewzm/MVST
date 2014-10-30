@@ -73,8 +73,8 @@ Prec_from_SPDE_wrapper <- function(M,K,nu,desired_prec,l) {
 #' @export
 #' @examples
 #' x1 <- runif(10)
-#' Sigma <- my_Matern(as.matrix(dist(x1)),nu=3/2,var=1,kappa=100)
-my_Matern <- function(r=0:100,nu=3/2,var=1,kappa=0.1) {
+#' Sigma <- Matern(as.matrix(dist(x1)),nu=3/2,var=1,kappa=100)
+Matern <- function(r=0:100,nu=3/2,var=1,kappa=0.1) {
   K <- var/((2^(nu-1))*gamma(nu))*(kappa*abs(r))^nu*besselK(kappa*abs(r),nu=nu)
   if (class(K) == "matrix") {
     diag(K) = var

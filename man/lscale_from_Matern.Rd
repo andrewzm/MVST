@@ -26,7 +26,7 @@ var_true <- 1
 kappa_true <- kappa_from_l(l=1700,nu=2)
 X <- data.frame(x = 3000*runif(100), y = 3000*runif(100))
 dd<- fields::rdist(X,X)
-K <- my_Matern(r=dd,nu=2,var=var_true,kappa=kappa_true)
+K <- Matern(r=dd,nu=2,var=var_true,kappa=kappa_true)
 X$z <-  t(chol(K)) \%*\% rnorm(nrow(X))
 var_marg <- var(X["z"])
 var_search <- 10^(seq(log10(var_marg/100),log10(var_marg*100),length=100))
