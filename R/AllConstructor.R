@@ -584,6 +584,7 @@ setMethod("initialize",signature="Obs",function(.Object,df,name=NA,remove_cross_
     } else {
         data_df <- df 
     }
+    
     .Object@df <- data_df
     .Object <- preprocess_obs(.Object,...)
     if (is.null(data_df$obs_name))
