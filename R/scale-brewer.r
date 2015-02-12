@@ -84,13 +84,16 @@ scale_colour_distiller <- function(..., type = "seq", palette = 1, values = NULL
 
 #' @export
 #' @rdname scale_brewer
-scale_fill_distiller <- function(..., type = "seq", palette = 1, values = NULL, space = "Lab", na.value = "grey50") {
+scale_fill_distiller <- function(..., type = "seq", palette = 1, values = NULL, space = "Lab", na.value = "grey50",reverse=F) {
   type <- match.arg(type, c("seq", "div", "qual"))
   if (type == "qual") {
     warning("Using a discrete colour palette in a continuous scale.\n  Consider using type=\"seq\" or type=\"div\" instead")
   }
+  pal <- brewer_pal(type, palette)(6)
+  if(reverse) pal <- rev(pal)
+  
   continuous_scale("fill", "distiller",
-                   gradient_n_pal(brewer_pal(type, palette)(6), values, space), na.value = na.value, ...)
+                   gradient_n_pal(pal, values, space), na.value = na.value, ...)
 }
 
 # icon.brewer <- function() {

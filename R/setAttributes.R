@@ -24,8 +24,10 @@ attribute_polygon <- function(df,shape_df) {
     for(i in unique(shape_df$id)){
       my_sub <- subset(shape_df,id==i)
       df2 <- subset(df,x > min(my_sub$x) & x < max(my_sub$x) & y > min(my_sub$y) & y < max(my_sub$y)) # Find enclosing box
-      myind <- df2[which(pnt.in.poly(cbind(df2$x,df2$y),my_sub[c("x","y")])$pip == 1),]$n
-      vals[myind] <- i
+      if(nrow(df2) > 0) {
+        myind <- df2[which(pnt.in.poly(cbind(df2$x,df2$y),my_sub[c("x","y")])$pip == 1),]$n
+        vals[myind] <- i
+      }
     }
     
   }

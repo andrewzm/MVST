@@ -1,0 +1,314 @@
+
+\documentclass{article}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage[T1]{fontenc}
+\usepackage{amsbsy} 
+\usepackage{natbib}
+\usepackage{tikz}
+
+%\VignetteEngine{knitr::knitr} 
+%\VignetteIndexEntry{Introduction to MVST}
+
+\newcommand{\bvec} {\textbf{\textit{b}}}
+\newcommand{\dvec} {\textbf{\textit{d}}}
+\newcommand{\avec} {\textbf{\textit{a}}}
+\newcommand{\evec} {\textbf{\textit{e}}}
+\newcommand{\hvec} {\textbf{\textit{h}}}
+\newcommand{\xvec} {\textbf{\textit{x}}}
+\newcommand{\yvec} {\textbf{\textit{y}}}
+\newcommand{\zvec} {\textbf{\textit{z}}}
+\newcommand{\wvec} {\textbf{\textit{w}}}
+\newcommand{\vvec} {\textbf{\textit{v}}}
+\newcommand{\svec} {\textbf{\textit{s}}}
+\newcommand{\uvec} {\textbf{\textit{u}}}
+\newcommand{\gvec} {\textbf{\textit{g}}}
+\newcommand{\fvec} {\textbf{\textit{f}}}
+\newcommand{\rvec} {\textbf{\textit{r}}}
+\newcommand{\zerob} {{\bf 0}}
+\newcommand{\betab} {\boldsymbol {\beta}}
+\newcommand{\muvec} {\boldsymbol {\mu}}
+
+\newcommand{\Amat} {\textbf{\textit{A}}}
+\newcommand{\Dmat} {\textbf{\textit{D}}}
+\newcommand{\Qmat} {\textbf{\textit{Q}}}
+\newcommand{\Cmat} {\textbf{\textit{C}}}
+\newcommand{\Imat} {\textbf{\textit{I}}}
+
+\bibliographystyle{plain}
+
+\voffset -0.5in
+\oddsidemargin -0.1in
+\textheight 21cm
+\textwidth 6.8in
+\linespread{1.5}
+
+\title{\texttt{MVST} applied to a 1-D bivariate problem}
+\author{Andrew Zammit-Mangion, University of Wollongong, Australia}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+%\SweaveOpts{concordance=TRUE}
+%\SweaveOpts{concordance=TRUE}
+
+\maketitle
+
+\begin{abstract}
+MVST is an \emph{R Software} package which facilitates the 
+construction of Gaussian multi-variate spatio-temporal fields. These fields can be
+a-priori independent or co-regionalised. The package also allows the variates to be 
+spatial-only, in which case they are assumed to be repeatedly observed in time.
+MVST is designed so that spatio-temporal fields can be decomposed using arbitrary basis functions.
+To date only finite elements are implemented, but in principle the package allows for any
+arbitrary decomposition, which can be different for each field.
+
+In this vignette, we show the basic functionality of the package by considering a bivariate system, where two signals need to be separated from a single observation data set. This problem replicates that shown in the Annals of Glaciology paper.
+
+\end{abstract}
+
+
+\section{Toy problem}
+
+First we load some essential packages. These include the plotting package \texttt{ggplot2} and a handy data-frame manipulation packages \texttt{dplyr}, followed by the in-house developed package \texttt{MVST}:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(ggplot2)}
+\hlkwd{library}\hlstd{(dplyr)}
+\hlkwd{library}\hlstd{(MVST)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+In this toy problem we consider two fields, $\xvec_1$ and $\xvec_2$ on a one-dimensional grid of $n = 99$ cells. We index the spatial domain using the variable $s$.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{set.seed}\hlstd{(}\hlnum{4}\hlstd{)}
+\hlstd{n} \hlkwb{<-} \hlnum{99}
+\hlstd{s} \hlkwb{<-} \hlnum{1}\hlopt{:}\hlstd{n}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+We assume that $\xvec_1$ and $\xvec_2$ are drawn from independent Gaussian processes with Mat{\'e}rn correlation functions. This class of correlation functions is fairly rich, and is defined by three parameters, $\nu, \sigma^2$ and $\kappa$. $\nu$ defines the smoothness of the process, $\sigma^2$ defines the marginal variance and $\kappa$ the scale (related to the process inverse correlation length). We set these processes to have different correlation lengths.
+
+The covariance matrix of the 99 grid points is found by applying the respective Mat{\'e}rn function to the distance matrix computed from these 99 points (points closer to each other will have a higher covariance). The following covariance matrices can be plotted using the function \texttt{image} if needed.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{S1} \hlkwb{<-} \hlkwd{Matern}\hlstd{(}\hlkwd{as.matrix}\hlstd{(}\hlkwd{dist}\hlstd{(s)),} \hlkwc{nu} \hlstd{=} \hlnum{3}\hlopt{/}\hlnum{2}\hlstd{,}\hlkwc{var}\hlstd{=}\hlnum{4}\hlstd{,} \hlkwc{kappa} \hlstd{=} \hlnum{0.1}\hlstd{)}
+\hlstd{S2} \hlkwb{<-} \hlkwd{Matern}\hlstd{(}\hlkwd{as.matrix}\hlstd{(}\hlkwd{dist}\hlstd{(s)),} \hlkwc{nu} \hlstd{=} \hlnum{3}\hlopt{/}\hlnum{2}\hlstd{,}\hlkwc{var}\hlstd{=}\hlnum{4}\hlstd{,} \hlkwc{kappa} \hlstd{=} \hlnum{0.4}\hlstd{)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+The package \texttt{MVST} requires the construction of Gaussian Markov random fields (GMRFs) which are canonically defined using precision matrices (inverse covariance matrices). These GMRFs are defined as follows:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{G1} \hlkwb{<-} \hlkwd{GMRF}\hlstd{(}\hlkwc{Q}\hlstd{=}\hlkwd{as}\hlstd{(}\hlkwd{chol2inv}\hlstd{(}\hlkwd{chol}\hlstd{(S1)),}\hlstr{"dgCMatrix"}\hlstd{))}
+\hlstd{G2} \hlkwb{<-} \hlkwd{GMRF}\hlstd{(}\hlkwc{Q}\hlstd{=}\hlkwd{as}\hlstd{(}\hlkwd{chol2inv}\hlstd{(}\hlkwd{chol}\hlstd{(S2)),}\hlstr{"dgCMatrix"}\hlstd{))}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+\noindent where \texttt{chol2inv(chol())} is an efficient way of computing the inverse of a matrix through the Cholesky factor (assuring matrix symmetry is preserved). Now that we have defined our processes we can construct a data frame containing all the information we require -- namely the grid cells, two samples from these processes, the raw observations and the noisy observations (where the error has variance $\sigma_v^2 = 1$):
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{sigmav} \hlkwb{<-} \hlnum{1}
+\hlstd{df} \hlkwb{<-} \hlkwd{data.frame}\hlstd{(}\hlkwc{s}\hlstd{=s)} \hlopt{%>%}
+      \hlkwd{mutate}\hlstd{(}\hlkwc{x1}\hlstd{=}\hlkwd{sample_GMRF}\hlstd{(G1),}
+             \hlkwc{x2}\hlstd{=}\hlkwd{sample_GMRF}\hlstd{(G2),}
+             \hlkwc{y_clean} \hlstd{= x1} \hlopt{+} \hlstd{x2,}
+             \hlkwc{y} \hlstd{= y_clean} \hlopt{+} \hlstd{sigmav}\hlopt{*}\hlkwd{rnorm}\hlstd{(n),}
+             \hlkwc{x1_model} \hlstd{= x1} \hlopt{+} \hlnum{2} \hlopt{+} \hlkwd{sample_GMRF}\hlstd{(G1)}\hlopt{*}\hlnum{0.2}\hlstd{,}
+             \hlkwc{x2_est} \hlstd{= y} \hlopt{-} \hlstd{x1_model)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+\noindent Note that we have also included \texttt{x1\_model} and \texttt{x2\_est}. These are the (invented) biased model output of $\xvec_1$ ($\hat\xvec_1$) and the estimate of $\xvec_2$ which would be obtained if we simply subtracted this estimate from the observations. These will be visualised later on.
+
+The utility of \texttt{MVST} is in constructing a graph where the user identifies what observation is measuring what signal. This is particulary useful in the context of the mass-balance assessment in the Antarctic ice sheet where we have multiple observations and processes. Here we simply assume that the data is affected by both processes and to equal effect. Hence
+
+\begin{equation}
+\yvec = \Cmat_1\xvec_1 + \Cmat_2\xvec_2 + \evec
+\end{equation}
+\noindent where both $\Cmat_1$ and $\Cmat_2$ are defined to be the identity matrix. This observation equation is set up using the \texttt{link} functions.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{obs} \hlkwb{<-} \hlkwd{Obs}\hlstd{(}\hlkwc{df}\hlstd{=}\hlkwd{data.frame}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{z}\hlstd{=df}\hlopt{$}\hlstd{y,}\hlkwc{std}\hlstd{=sigmav))}
+\hlstd{C} \hlkwb{<-} \hlkwd{Imat}\hlstd{(n)}
+\hlstd{L1} \hlkwb{<-} \hlkwd{link}\hlstd{(G1,obs,}\hlkwc{Cmat} \hlstd{= C)}
+\hlstd{L2} \hlkwb{<-} \hlkwd{link}\hlstd{(G2,obs,}\hlkwc{Cmat} \hlstd{= C)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+\noindent Once we have the observations, the processes and the links all defined, we can construct the graph. \texttt{MVST} requires that a list of links and a list of edges is defined before constructing the graph, which is then compressed into a simple two-node network. Results are then obtained by a simple Gaussian update using the \texttt{Infer} function. 
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{e} \hlkwb{<-} \hlkwd{new}\hlstd{(}\hlstr{"link_list"}\hlstd{,}\hlkwd{list}\hlstd{(L1,L2))}
+\hlstd{v} \hlkwb{<-} \hlkwd{new}\hlstd{(}\hlstr{"block_list"}\hlstd{,}\hlkwd{list}\hlstd{(}\hlkwc{G1}\hlstd{=G1,}\hlkwc{G2}\hlstd{=G2,}\hlkwc{O}\hlstd{=obs))}
+\hlstd{G} \hlkwb{<-} \hlkwd{new}\hlstd{(}\hlstr{"Graph"}\hlstd{,}\hlkwc{e}\hlstd{=e,}\hlkwc{v}\hlstd{=v)}
+\hlstd{G_reduced} \hlkwb{<-} \hlkwd{compress}\hlstd{(G)}
+\hlstd{Results} \hlkwb{<-} \hlkwd{Infer}\hlstd{(G_reduced)}
+\end{alltt}
+\begin{verbatim}
+## Doing Cholesky and Takahashi
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+\noindent \texttt{Results} contains all the information required to obtain inferences. The key object is \texttt{Results\$Post\_GMRF} which contains the posterior precision matrix and the posterior expectation \texttt{mu}. These can be added to our previous data frame as follows:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{Sigma} \hlkwb{<-} \hlkwd{solve}\hlstd{(Results}\hlopt{$}\hlstd{Post_GMRF}\hlopt{@}\hlkwc{Q}\hlstd{)}
+\hlstd{df} \hlkwb{<-} \hlkwd{mutate}\hlstd{(df,}
+             \hlkwc{x1_mean} \hlstd{= Results}\hlopt{$}\hlstd{Post_GMRF}\hlopt{@}\hlkwc{mu}\hlstd{[}\hlnum{1}\hlopt{:}\hlstd{n] ,}
+             \hlkwc{x2_mean} \hlstd{= Results}\hlopt{$}\hlstd{Post_GMRF}\hlopt{@}\hlkwc{mu}\hlstd{[}\hlopt{-}\hlstd{(}\hlnum{1}\hlopt{:}\hlstd{n)] ,}
+             \hlkwc{x1_std} \hlstd{=} \hlkwd{sqrt}\hlstd{(}\hlkwd{diag}\hlstd{(Sigma))[(}\hlnum{1}\hlopt{:}\hlstd{n)],}
+             \hlkwc{x2_std} \hlstd{=} \hlkwd{sqrt}\hlstd{(}\hlkwd{diag}\hlstd{(Sigma))[}\hlopt{-}\hlstd{(}\hlnum{1}\hlopt{:}\hlstd{n)])}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+\noindent Now all that is left is plotting the results. Plotting is probably the most tedious part of the exercise and thus we include all the code below. Note, from the following figures, how using the model output blindly (without additional modelling effort) may lead to biases. The result we obtain from this approach will be unbiased if the prior assumption of the signals being centred around 0 is unbiased.
+
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{g} \hlkwb{<-} \hlkwd{LinePlotTheme}\hlstd{()} \hlopt{+} \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x1),}\hlkwc{colour}\hlstd{=}\hlstr{"red"}\hlstd{)} \hlopt{+}
+     \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x2),}\hlkwc{colour}\hlstd{=}\hlstr{"blue"}\hlstd{)} \hlopt{+} \hlkwd{ylab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+}
+     \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x1_model),}\hlkwc{colour}\hlstd{=}\hlstr{"black"}\hlstd{)} \hlopt{+} \hlkwd{ylab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+} \hlkwd{xlab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+}
+     \hlkwd{geom_point}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=y),}\hlkwc{colour}\hlstd{=}\hlstr{"dark green"}\hlstd{,}\hlkwc{ize}\hlstd{=}\hlnum{2}\hlstd{)} \hlopt{+}
+     \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=}\hlkwd{guide_legend}\hlstd{(}\hlstr{""}\hlstd{))}  \hlopt{+}
+     \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=F)} \hlopt{+}
+     \hlkwd{ggtitle}\hlstd{(}\hlstr{"a"}\hlstd{)} \hlopt{+}
+     \hlkwd{theme}\hlstd{(}\hlkwc{plot.title} \hlstd{=} \hlkwd{element_text}\hlstd{(}\hlkwc{hjust} \hlstd{=} \hlopt{-}\hlnum{0.04}\hlstd{,}\hlkwc{vjust}\hlstd{=}\hlopt{-}\hlnum{0.5}\hlstd{))} \hlopt{+}
+     \hlcom{#theme(plot.margin=grid::unit(c(2,2,2,2),"mm")) +}
+     \hlkwd{theme}\hlstd{(}\hlkwc{axis.text.x}\hlstd{=}\hlkwd{element_blank}\hlstd{())}
+
+\hlstd{g1} \hlkwb{<-} \hlkwd{LinePlotTheme}\hlstd{()} \hlopt{+} \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x2_est,}\hlkwc{colour}\hlstd{=}\hlkwd{bquote}\hlstd{(}\hlstr{"x2"}\hlstd{)),}\hlkwc{colour}\hlstd{=}\hlstr{"black"}\hlstd{)} \hlopt{+}
+   \hlkwd{geom_ribbon}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,} \hlkwc{ymax} \hlstd{= x2_est} \hlopt{+} \hlstd{sigmav,} \hlkwc{ymin} \hlstd{= x2_est}\hlopt{-}\hlstd{sigmav),}
+               \hlkwc{alpha}\hlstd{=}\hlnum{0.2}\hlstd{,}\hlkwc{fill}\hlstd{=}\hlstr{"black"}\hlstd{)} \hlopt{+} \hlkwd{ylab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+}\hlkwd{xlab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+}
+    \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x2,}\hlkwc{colour}\hlstd{=}\hlstr{"x2"}\hlstd{),}\hlkwc{colour}\hlstd{=}\hlstr{"blue"}\hlstd{)} \hlopt{+}
+  \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=}\hlkwd{guide_legend}\hlstd{(}\hlstr{""}\hlstd{,))}  \hlopt{+}
+  \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=F)} \hlopt{+}
+  \hlkwd{ggtitle}\hlstd{(}\hlstr{"b"}\hlstd{)} \hlopt{+}
+  \hlkwd{theme}\hlstd{(}\hlkwc{plot.title} \hlstd{=} \hlkwd{element_text}\hlstd{(}\hlkwc{hjust} \hlstd{=} \hlopt{-}\hlnum{0.04}\hlstd{,}\hlkwc{vjust}\hlstd{=}\hlopt{-}\hlnum{0.5}\hlstd{))} \hlopt{+}
+  \hlkwd{theme}\hlstd{(}\hlkwc{axis.text.x}\hlstd{=}\hlkwd{element_blank}\hlstd{())} \hlopt{+}
+  \hlkwd{scale_y_continuous}\hlstd{(}\hlkwc{breaks}\hlstd{=}\hlkwd{seq}\hlstd{(}\hlopt{-}\hlnum{8}\hlstd{,}\hlnum{1}\hlstd{,}\hlnum{3}\hlstd{))}
+
+\hlstd{g2} \hlkwb{<-} \hlkwd{LinePlotTheme}\hlstd{()} \hlopt{+} \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x2_mean),}\hlkwc{colour}\hlstd{=}\hlstr{"black"}\hlstd{)} \hlopt{+}
+  \hlkwd{geom_ribbon}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,} \hlkwc{ymax} \hlstd{= x2_mean} \hlopt{+} \hlstd{x2_std,} \hlkwc{ymin} \hlstd{= x2_mean}\hlopt{-}\hlstd{x2_std),}
+              \hlkwc{alpha}\hlstd{=}\hlnum{0.2}\hlstd{,}\hlkwc{fill}\hlstd{=}\hlstr{"black"}\hlstd{)} \hlopt{+} \hlkwd{ylab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+}\hlkwd{xlab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+}
+  \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x2,}\hlkwc{colour}\hlstd{=}\hlstr{"x2"}\hlstd{),}\hlkwc{colour}\hlstd{=}\hlstr{"blue"}\hlstd{)} \hlopt{+}
+  \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=}\hlkwd{guide_legend}\hlstd{(}\hlstr{""}\hlstd{))} \hlopt{+}
+  \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=F)} \hlopt{+}
+  \hlkwd{ggtitle}\hlstd{(}\hlstr{"c"}\hlstd{)} \hlopt{+}
+  \hlkwd{theme}\hlstd{(}\hlkwc{plot.title} \hlstd{=} \hlkwd{element_text}\hlstd{(}\hlkwc{hjust} \hlstd{=} \hlopt{-}\hlnum{0.04}\hlstd{,}\hlkwc{vjust}\hlstd{=}\hlopt{-}\hlnum{0.5}\hlstd{))} \hlopt{+}
+  \hlkwd{theme}\hlstd{(}\hlkwc{axis.text.x}\hlstd{=}\hlkwd{element_blank}\hlstd{())} \hlopt{+}
+  \hlkwd{scale_y_continuous}\hlstd{(}\hlkwc{breaks}\hlstd{=}\hlkwd{seq}\hlstd{(}\hlopt{-}\hlnum{3}\hlstd{,}\hlnum{3}\hlstd{,}\hlnum{2}\hlstd{))}
+
+\hlstd{g3} \hlkwb{<-} \hlkwd{LinePlotTheme}\hlstd{()} \hlopt{+} \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x1_mean),}\hlkwc{colour}\hlstd{=}\hlstr{"black"}\hlstd{)} \hlopt{+}
+  \hlkwd{geom_ribbon}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,} \hlkwc{ymax} \hlstd{= x1_mean} \hlopt{+} \hlstd{x1_std,} \hlkwc{ymin} \hlstd{= x1_mean}\hlopt{-}\hlstd{x1_std),}
+              \hlkwc{alpha}\hlstd{=}\hlnum{0.2}\hlstd{,}\hlkwc{fill}\hlstd{=}\hlstr{"black"}\hlstd{)} \hlopt{+} \hlkwd{ylab}\hlstd{(}\hlstr{""}\hlstd{)} \hlopt{+}
+  \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=}\hlkwd{guide_legend}\hlstd{(}\hlstr{""}\hlstd{))}  \hlopt{+}
+  \hlkwd{guides}\hlstd{(}\hlkwc{colour}\hlstd{=F)} \hlopt{+}
+  \hlkwd{ggtitle}\hlstd{(}\hlstr{"d"}\hlstd{)} \hlopt{+}
+  \hlkwd{theme}\hlstd{(}\hlkwc{plot.title} \hlstd{=} \hlkwd{element_text}\hlstd{(}\hlkwc{hjust} \hlstd{=} \hlopt{-}\hlnum{0.04}\hlstd{,}\hlkwc{vjust}\hlstd{=}\hlopt{-}\hlnum{0.5}\hlstd{))} \hlopt{+}
+  \hlkwd{geom_line}\hlstd{(}\hlkwc{data}\hlstd{=df,}\hlkwd{aes}\hlstd{(}\hlkwc{x}\hlstd{=s,}\hlkwc{y}\hlstd{=x1,}\hlkwc{colour}\hlstd{=}\hlstr{"x1"}\hlstd{),}\hlkwc{colour}\hlstd{=}\hlstr{"red"}\hlstd{)} \hlopt{+}
+  \hlkwd{xlab}\hlstd{(}\hlstr{"n"}\hlstd{)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{print}\hlstd{(g)}
+\end{alltt}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/Plot1-1} 
+\begin{kframe}\begin{alltt}
+\hlkwd{print}\hlstd{(g1)}
+\end{alltt}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/Plot1-2} 
+\begin{kframe}\begin{alltt}
+\hlkwd{print}\hlstd{(g2)}
+\end{alltt}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/Plot1-3} 
+\begin{kframe}\begin{alltt}
+\hlkwd{print}\hlstd{(g3)}
+\end{alltt}
+\end{kframe}
+\includegraphics[width=\maxwidth]{figure/Plot1-4} 
+
+\end{knitrout}
+
+\bibliography{mvst}
+
+\end{document}

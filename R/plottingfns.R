@@ -40,6 +40,14 @@
     args$pt_size <- args$size
   } 
   
+  if(!("palette" %in% names(args))) {
+    args$palette <- "RdYlBu"
+  } 
+  
+  if(!("reverse" %in% names(args))) {
+    args$reverse <- FALSE
+  } 
+  
   return(args)
 }
 
@@ -56,13 +64,15 @@ setMethod("plot_interp",signature(x = "FEBasis",y="character"),  # GRBF basis wi
             zhi <- args$max
             zlo <- args$min 
             leg_title <- args$leg_title
+            palette <- args$palette
+            reverse <- args$reverse
             
             mesh_grid <- interp(Mesh["x"],Mesh["y"],Mesh["to_plot"],
                                 xo=seq(min(Mesh["x"]),max(Mesh["x"]),length=ds), 
                                 yo=seq(min(Mesh["y"]),max(Mesh["y"]),length=ds))
             expanded_grid <- cbind(expand.grid(mesh_grid$x,mesh_grid$y),as.vector(mesh_grid$z))
             names(expanded_grid) <- c("x","y","z")
-            g <- OverlayPlot(expanded_grid,GGstd = NULL,leg_title=leg_title,zlo=zlo,zhi=zhi)
+            g <- OverlayPlot(expanded_grid,GGstd = NULL,leg_title=leg_title,zlo=zlo,zhi=zhi,palette=palette,reverse=reverse)
             return(g)
           })
 
@@ -486,17 +496,18 @@ spy <-function(X) {
 #' @title Overla Plot
 #' @description Still to be documented
 #' @export
-OverlayPlot <- function(GG,GGstd = NULL,leg_title="",do_mesh=0,zlo = -0.6,zhi = 0.6,alphalo = 0.2, alphahi = 1) {
+OverlayPlot <- function(GG,GGstd = NULL,leg_title="",do_mesh=0,zlo = -0.6,zhi = 0.6,alphalo = 0.2, alphahi = 1,palette="RdYlBu",reverse=F) {
   GG$zlo = zlo
   GG$zhi = zhi
   if (!is.null(GGstd)) {
     GGstd$alphalo = alphalo
     GGstd$alphahi = alphahi
   }
-  g <- LinePlotTheme() + geom_tile(data=GG,aes(x=x,y=y,fill=pmin(pmax(z,zlo),zhi))) +
+  
+  g <- LinePlotTheme() + geom_tile(data=subset(GG,!(is.na(z))),aes(x=x,y=y,fill=pmin(pmax(z,zlo),zhi))) +
     #scale_fill_gradient2(low=(muted("red")),mid="light yellow",high=(muted("blue")),limits=c(zlo,zhi),
     #                     guide=guide_colourbar(title=leg_title)) + 
-    scale_fill_distiller(palette="RdYlBu",limits=c(zlo,zhi),
+    scale_fill_distiller(palette=palette,reverse=reverse,limits=c(zlo,zhi),
                          guide=guide_colourbar(title=leg_title,position=c(-1500,500)))
   
   if (!is.null(GGstd)) {
