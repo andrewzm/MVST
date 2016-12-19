@@ -520,12 +520,21 @@ FindC_polyaverage  <- function(p,tri,polygons,plotit=F,mulfun = 0,muldata=NULL,m
   cat("Constructing incidence matrix from supports ... ",sep="\n")
   pb <- txtProgressBar(min = 0, max = m, style = 3)
   for (i in 1:m) {
+      
     # Creates fine grid
     pv <- poly_xy(polygons[i])
-    pnts_to_consider <- which(apply(rdist(p,pv),1,min) < max_tri_length)
-    pnts <- p[pnts_to_consider,]
-    tris_to_consider <- which(apply(tri,1,function(x) any(x %in% pnts_to_consider)))
-    tris <- tri[tris_to_consider,]
+    
+    # pnts_to_consider <- which(apply(rdist(p,pv),1,min) < max_tri_length)
+    # pnts <- p[pnts_to_consider,]
+    # tris_to_consider <- which(apply(tri,1,function(x) any(x %in% pnts_to_consider)))
+    # tris <- tri[tris_to_consider,]
+    
+    ## I'm adding the following fail-safe for now -- there seems to be a 
+    ## problem with the above -- you cannot just subset the points because the mapping
+    ## from the triangles to the points is broken!! How was it working before?
+    pnts <- p
+    tris <- tri
+    
     
     x_grid <- seq(min(pv[,1]),max(pv[,1]),length=ds)
     y_grid <- seq(min(pv[,2]),max(pv[,2]),length=ds)
