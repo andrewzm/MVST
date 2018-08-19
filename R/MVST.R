@@ -21,6 +21,7 @@
 #' @useDynLib MVST
 #' @import ggplot2
 #' @import spam
+#' @import sparseinv
 #' @import Matrix
 #' @importClassesFrom gpclib gpc.poly
 #' @importFrom raster raster

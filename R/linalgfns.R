@@ -28,6 +28,44 @@ find_pivot_Bastos <- function(A) {
  return(list(R=R,piv=piv))
 }
 
+
+#' @title Sparse Cholesky factorisation with fill-in reducing permutations
+#' @description This function is similar to chol(A, pivot=T) when A is a sparse matrix. The fill-in reduction permutation is the approximate minimum degree permutation of
+#' Davis' SuiteSparse package configured to be slightly more aggressive than that in the Matrix package.
+#'
+#' @param Q precision matrix of class \code{matrix}, \code{Matrix} (column-compressed, i.e., \code{dgCMatrix} or \code{dsCMatrix}), or \code{spam}
+#' @return A list with two elements, Qpermchol (the permuted Cholesky factor) and P (the permutation matrix) of class Matrix. Note that \code{spam} matrices are not returned to comply with the Takahashi_Davis function which requires objects of class \code{Matrix}.
+#' @keywords Cholesky factor
+#' @export
+#' @examples
+#' require(Matrix)
+#' cholPermute(sparseMatrix(i = c(1,1,2,2),
+#'                          j = c(1, 2, 1, 2),
+#'                          x = c(0.1, 0.2, 0.2, 1)))
+#' @references Havard Rue and Leonhard Held (2005). Gaussian Markov Random Fields: Theory and Applications. Chapman & Hall/CRC Press
+cholPermute <- function(Q)  {
+  if(!is(Q,"Matrix") & !is(Q,"spam") & !is(Q,"matrix"))
+      stop("Q needs to be a matrix, spam matrix or Matrix")
+
+  if(!isSymmetric(Q)) stop("Q needs to be symmetric")
+  n <- nrow(Q) # dimension
+
+  ## Cast to Matrix
+  if(is(Q,"matrix")) {
+      Q <- as(Q,"dgCMatrix")
+  } else if(is(Q, "spam"))   {
+      Q <- as.dgCMatrix.spam(Q)
+  }
+
+  P <- amd_Davis(Q)
+  Qp <- Q[P,P]
+  Qpermchol  <- t(Matrix::chol(Qp))
+  P <- sparseMatrix(i = P, j = 1:n, x = 1)
+  return(list(Qpermchol = Qpermchol,
+              P = P))
+}
+
+
 #' @title Sparse Cholesky Factorisation with fill-in reducing permutations
 #'
 #' @description This function is similar to chol(A,pivot=T) when A is a sparse matrix. The fill-in reduction permutation is the approximate minimum degree permutation of 
@@ -43,7 +81,7 @@ find_pivot_Bastos <- function(A) {
 #' require(Matrix)
 #' cholPermute(sparseMatrix(i=c(1,1,2,2),j=c(1,2,1,2),x=c(0.1,0.2,0.2,1)))
 #' @references Havard Rue and Leonhard Held (2005). Gaussian Markov Random Fields: Theory and Applications. Chapman & Hall/CRC Press
-cholPermute <- function(Q,method="spam",matlab_server=NULL)  {
+cholPermute_old <- function(Q, method="spam", matlab_server=NULL)  {
   n <- nrow(Q)
   
   if(method == "amd") {
@@ -80,6 +118,9 @@ cholPermute <- function(Q,method="spam",matlab_server=NULL)  {
   }
   
 }
+
+
+
 
 #' @title Solve the equation Qx = y
 #'
