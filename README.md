@@ -1,7 +1,7 @@
 MVST v2.0
 =========
 
-*Important: For reproducibility of the RATES papers (prior to 2018) please install MVST v1.0 available from the list of releases (look up the Consolidation Release).*
+**Important: For reproducibility of the RATES papers (prior to 2018) please install MVST v1.0 available from the list of releases (look up the Consolidated Release).**
 
 Purpose
 -------
