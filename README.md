@@ -1,5 +1,7 @@
-MVST
+MVST v2.0
 =========
+
+*Important: For reproducibility of the RATES papers (prior to 2018) please install MVST v1.0 available from the list of releases (look up the Consolidation Release).
 
 Purpose
 -------
@@ -42,9 +44,9 @@ License and contact
 
 Contact:	Andrew Zammit-Mangion
 
-Date:	25/06/2014
+Date:	18/08/2018
 
-Copyright (c) 2014, under the Simplified BSD License. 
+Copyright (c) 2018, under the Simplified BSD License. 
 
 For more information on FreeBSD see: http://www.opensource.org/licenses/bsd-license.php
 All rights reserved.
