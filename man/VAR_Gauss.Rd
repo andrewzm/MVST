@@ -4,10 +4,10 @@
 \alias{VAR_Gauss}
 \title{Vector auto-regressive model with GMRF represenation}
 \usage{
-VAR_Gauss(mu_fun = function(k) return(matrix(0, 2, 5)),
-  A_fun = function(k) return(Imat(2)), B_fun = function(k)
-  return(emptySp()), Qw_fun = function(k) return(Imat(2)),
-  t_axis = c(0:6), Qb = emptySp(), name = "none")
+VAR_Gauss(mu_fun = function(k) return(matrix(0, 2, 5)), A_fun = function(k)
+  return(Imat(2)), B_fun = function(k) return(emptySp()),
+  Qw_fun = function(k) return(Imat(2)), t_axis = c(0:6), Qb = emptySp(),
+  name = "none")
 }
 \arguments{
 \item{mu_fun}{function of time \eqn{k}, returns matrix of size \eqn{n}}

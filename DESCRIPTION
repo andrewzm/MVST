@@ -34,7 +34,7 @@ Imports:
     actuar,
     akima,
     geometry,
-    sparseinv,
+    sparseinv (>= 0.1.3),
     igraph
 License: GPL (>= 2)
 NeedsCompilation: yes
