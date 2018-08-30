@@ -57,7 +57,7 @@ attribute_data <- function(df,info_df,miss_value = 0,averaging_box=NA) {
   
   if (xdiff == 1) {
     cat("Grid of 1km detected. Trying to merge with mesh (assumed rounded to nearest km)",sep="\n")
-    df <- merge(df,info_df,by=c("x","y"),all.x=T)
+    df <- plyr::join(df, info_df, by=c("x", "y"), type="left")
     names(df)[ncol(df)] <- "cont_vals"
   } else {
     fn_cont <- function(s) { return(nn_grid_interp(s,df=info_df,delta=xdiff,miss_value=NA)) }
