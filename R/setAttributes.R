@@ -40,14 +40,16 @@ attribute_polygon <- function(df,shape_df) {
 #' @param df data frame to which data is attributed. Must contain fields \code{x} and \code{y}.
 #' @param info_df the data-containing data frame. Must contain fields \code{x}, \code{y} and \code{z} and points must lie on an ordered grid.
 #' @param miss_value the value attributed to data points which cannot be mapped.
-#' @param averaging_box a vector of length 4 describing a box around the values which cannot be matched to the data. The missing value will then be replaced with the average of data found in this box. The vector should of the format \code{(-x1,-y1,x2,y2)}.
+#' @param averaging_buffer a distance radius around the values which cannot be matched to the data. The missing value will then be replaced with the average of data found in this radius. The number should be in the same lenght units as the dataset.
 #' @return a vector of the data mapped onto the coordinates in \code{df}
 #' @export
 #' @examples
 #' df <- data.frame(x=runif(100),y=runif(100))
 #' info_df <- cbind(expand.grid(x=seq(0,1,0.1),y=seq(0,1,0.1)),z=runif(121))
 #' df$z <- attribute_data(df=df,info_df = info_df)
-attribute_data <- function(df,info_df,miss_value = 0,averaging_box=NA) {
+attribute_data <- function(df,info_df,miss_value = 0,averaging_buffer=NA) {
+  require("raster")
+
   xgrid <- sort(unique(info_df$x))
   ygrid <- sort(unique(info_df$y))
   xdiff <- stat_mode(diff(xgrid))
@@ -55,29 +57,25 @@ attribute_data <- function(df,info_df,miss_value = 0,averaging_box=NA) {
   
   if(!(xdiff == ydiff)) stop("Currently method only implemented for symmetric grids")
   
-  if (xdiff == 1) {
-    cat("Grid of 1km detected. Trying to merge with mesh (assumed rounded to nearest km)",sep="\n")
-    df <- plyr::join(df, info_df, by=c("x", "y"), type="left")
-    names(df)[ncol(df)] <- "cont_vals"
-  } else {
-    fn_cont <- function(s) { return(nn_grid_interp(s,df=info_df,delta=xdiff,miss_value=NA)) }
-    cont_vals <- fn_cont(cbind(df$x,df$y))
-    df <- cbind(df,cont_vals)
-  }
+  # The points are a regular grid, so go an perfom a merge
+  # Firstly do a simple merge (the mesh node takes the value of the cell it
+  # is situated in)
+
+  info_df_ras <- rasterFromXYZ(info_df)
+  df$cont_vals <- extract(info_df_ras, df[c("x", "y")], method="simple")
+
+
+  # Now check if there is an averaging buffer when dealing with missing values
+  if(!(is.na(averaging_buffer))){
+    stopifnot(is.numeric(averaging_buffer) & length(averaging_buffer == 1))
+    
+    # Perform the merge again with just missing values and an averging radius buffer
+    # the mean of the values within the point radius (excluding NA's) are returned
+    df[is.na(df$cont_vals), "cont_vals"] <- extract(info_df_ras, df[is.na(df$cont_vals),c("x", "y")],
+     method="simple", buffer=averaging_buffer, fun=mean, na.rm=TRUE)
+    
+    df$cont_vals[is.na(df$cont_vals)] = miss_value
   
-  
-  if(!(is.na(averaging_box))){
-    stopifnot(is.numeric(averaging_box) & length(averaging_box == 4))
-    missing_vals <-  which(is.na(df$cont_vals)) 
-    for(i in missing_vals) {
-      sub_region <- subset(df, (x < df$x[i]+averaging_box[3]) & (y < df$y[i]+averaging_box[4]) &
-                             (x > df$x[i]+averaging_box[1]) & (y > df$y[i]+averaging_box[2]))
-      if (!all(is.na(sub_region$cont_vals))) {
-        df$cont_vals[i] <- mean(sub_region$cont_vals,na.rm=T)
-      } else {
-        df$cont_vals[i] = miss_value
-      }
-    }
   } else {
     df$cont_vals[is.na(df$cont_vals)] = miss_value
   }
