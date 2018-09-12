@@ -162,7 +162,8 @@ Load_data <- function(thinning = 1,     # how much we thin grounding and shapefi
     if (!file.exists(args[[i]])) stop(paste("Cannot find file ",args[[i]],sep=""))
     if (basename_ext(args[[i]]) == "shp") {
       cat("Loading shapefile...",sep="\n")
-      shpfile <- readShapeSpatial(args[[i]])
+      shpfile <- rgdal::readOGR(dsn=dirname(args[[i]]), 
+        tools::file_path_sans_ext(basename(args[[i]])))
       shpfile_table <- fortify(shpfile)
       if (convert_m_to_km) {
         shpfile_table$long <- shpfile_table$long/1000
