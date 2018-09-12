@@ -64,22 +64,26 @@ attribute_data <- function(df,info_df,miss_value = 0,averaging_buffer=NA) {
   info_df_ras <- rasterFromXYZ(info_df)
   df$cont_vals <- extract(info_df_ras, df[c("x", "y")], method="simple")
 
+  # Check if there are missing values, if not then skip this
+  if(length(is.na(aux$surface_denisty)) != 0){
 
-  # Now check if there is an averaging buffer when dealing with missing values
-  if(!(is.na(averaging_buffer))){
-    stopifnot(is.numeric(averaging_buffer) & length(averaging_buffer == 1))
+    # Now check if there is an averaging buffer when dealing with missing values
+    if(!(is.na(averaging_buffer))){
+      stopifnot(is.numeric(averaging_buffer) & length(averaging_buffer == 1))
+      
+      # Perform the merge again with just missing values and an averging radius buffer
+      # the mean of the values within the point radius (excluding NA's) are returned
+      df[is.na(df$cont_vals), "cont_vals"] <- extract(info_df_ras, df[is.na(df$cont_vals),c("x", "y")],
+       method="simple", buffer=averaging_buffer, fun=mean, na.rm=TRUE)
+      
+      df$cont_vals[is.na(df$cont_vals)] = miss_value
     
-    # Perform the merge again with just missing values and an averging radius buffer
-    # the mean of the values within the point radius (excluding NA's) are returned
-    df[is.na(df$cont_vals), "cont_vals"] <- extract(info_df_ras, df[is.na(df$cont_vals),c("x", "y")],
-     method="simple", buffer=averaging_buffer, fun=mean, na.rm=TRUE)
-    
-    df$cont_vals[is.na(df$cont_vals)] = miss_value
-  
-  } else {
-    df$cont_vals[is.na(df$cont_vals)] = miss_value
+    } else {
+      df$cont_vals[is.na(df$cont_vals)] = miss_value
+    }
+
   }
-  
+    
   return(df$cont_vals)
   
 }
