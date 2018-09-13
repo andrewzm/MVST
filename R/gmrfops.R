@@ -613,16 +613,16 @@ Build_AQA <- function(Qx,A,T) {
   AQ <- t(A) %*% Qx
   for ( i in 0:(T-3)) {
     if (i == 0) {
-      Q <- cBind(-QA, AQA, -AQ , Zeromat(n,((T-3)-i)*n))
+      Q <- cbind(-QA, AQA, -AQ , Zeromat(n,((T-3)-i)*n))
     } else if (i == (T-3)) {
-      Q <- rBind(Q,cBind(Zeromat(n,n*i),-QA, AQA, -AQ))
+      Q <- rbind(Q,cbind(Zeromat(n,n*i),-QA, AQA, -AQ))
     } else {
-      Q <- rBind(Q,cBind(Zeromat(n,n*i),-QA, AQA, -AQ , Zeromat(n,((T-3)-i)*n)))
+      Q <- rbind(Q,cbind(Zeromat(n,n*i),-QA, AQA, -AQ , Zeromat(n,((T-3)-i)*n)))
     }
   }
-  Q <- #rBind(cBind(Qx, -AQ, Zeromat(n,(T-2)*n)),
-        rBind(cBind((Qx - A %*% Qx %*% A) + A %*% Qx %*% A, -AQ, Zeromat(n,(T-2)*n)),
+  Q <- #rbind(cbind(Qx, -AQ, Zeromat(n,(T-2)*n)),
+        rbind(cbind((Qx - A %*% Qx %*% A) + A %*% Qx %*% A, -AQ, Zeromat(n,(T-2)*n)),
              Q,
-             cBind(Zeromat(n,n*(T-2)),-QA, Qx))
+             cbind(Zeromat(n,n*(T-2)),-QA, Qx))
   return(Q)
 }

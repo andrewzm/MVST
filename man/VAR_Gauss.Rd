@@ -4,10 +4,10 @@
 \alias{VAR_Gauss}
 \title{Vector auto-regressive model with GMRF represenation}
 \usage{
-VAR_Gauss(mu_fun = function(k) return(matrix(0, 2, 5)), A_fun = function(k)
-  return(Imat(2)), B_fun = function(k) return(emptySp()),
-  Qw_fun = function(k) return(Imat(2)), t_axis = c(0:6), Qb = emptySp(),
-  name = "none")
+VAR_Gauss(mu_fun = function(k) return(matrix(0, 2, 5)),
+  A_fun = function(k) return(Imat(2)), B_fun = function(k)
+  return(emptySp()), Qw_fun = function(k) return(Imat(2)),
+  t_axis = c(0:6), Qb = emptySp(), name = "none")
 }
 \arguments{
 \item{mu_fun}{function of time \eqn{k}, returns matrix of size \eqn{n}}
@@ -40,7 +40,7 @@ require(Matrix)
 t_axis <- 0:10
 mu <- function(k) return(matrix(0,length(t_axis),1))
 A <- function(k)  return(sparsediag(0.4))
-B <- function(k)  cBind(Imat(1),k*Imat(1))
+B <- function(k)  cbind(Imat(1),k*Imat(1))
 Q <- function(k)  return(sparsediag(1))
 Qb = bdiag(Imat(1),Imat(1))
 VAR <- VAR_Gauss( mu_fun = mu,A=A, B=B, Qw = Q,t_axis = t_axis,Qb=Qb,name="firstVAR") 

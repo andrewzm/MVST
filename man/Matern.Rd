@@ -18,6 +18,9 @@ Matern(r = 0:100, nu = 3/2, var = 1, kappa = 0.1)
 \value{
 a vector or matrix after passing \code{r} through the Matern function.
 }
+\description{
+The Matern function
+}
 \examples{
 x1 <- runif(10)
 Sigma <- Matern(as.matrix(dist(x1)),nu=3/2,var=1,kappa=100)

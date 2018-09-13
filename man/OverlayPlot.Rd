@@ -4,9 +4,9 @@
 \alias{OverlayPlot}
 \title{Overla Plot}
 \usage{
-OverlayPlot(GG, GGstd = NULL, leg_title = "", do_mesh = 0, zlo = -0.6,
-  zhi = 0.6, alphalo = 0.2, alphahi = 1, palette = "RdYlBu",
-  reverse = F)
+OverlayPlot(GG, GGstd = NULL, leg_title = "", do_mesh = 0,
+  zlo = -0.6, zhi = 0.6, alphalo = 0.2, alphahi = 1,
+  palette = "RdYlBu", reverse = F)
 }
 \description{
 Still to be documented

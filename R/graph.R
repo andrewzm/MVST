@@ -232,8 +232,8 @@ setMethod("compress",signature(Graph="Graph"),function(Graph) {
   }
 
   # Produce big C Matrix
-  Cmat <- Reduce("rBind",lapply(Olist,function(Out) {
-    Reduce("cBind",lapply(Glist,function(In) {
+  Cmat <- Reduce("rbind",lapply(Olist,function(Out) {
+    Reduce("cbind",lapply(Glist,function(In) {
       if(l <- .exist(Graph@e,Out,In)) {
         return(Graph@e[[l]]@Cmat)
       } else {

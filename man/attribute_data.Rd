@@ -4,7 +4,7 @@
 \alias{attribute_data}
 \title{Data-attribution}
 \usage{
-attribute_data(df, info_df, miss_value = 0, averaging_box = NA)
+attribute_data(df, info_df, miss_value = 0, averaging_buffer = NA)
 }
 \arguments{
 \item{df}{data frame to which data is attributed. Must contain fields \code{x} and \code{y}.}
@@ -13,7 +13,7 @@ attribute_data(df, info_df, miss_value = 0, averaging_box = NA)
 
 \item{miss_value}{the value attributed to data points which cannot be mapped.}
 
-\item{averaging_box}{a vector of length 4 describing a box around the values which cannot be matched to the data. The missing value will then be replaced with the average of data found in this box. The vector should of the format \code{(-x1,-y1,x2,y2)}.}
+\item{averaging_buffer}{a distance radius around the values which cannot be matched to the data. The missing value will then be replaced with the average of data found in this radius. The number should be in the same lenght units as the dataset.}
 }
 \value{
 a vector of the data mapped onto the coordinates in \code{df}

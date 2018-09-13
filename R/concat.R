@@ -16,7 +16,7 @@ setMethod("concat",signature = "GMRF",function(...) {
     intrinsic[[i]] <- l[[i]]@intrinsic
     n[[i]] <- l[[i]]@n
   }    
-  mu <- Reduce("rBind",mu)
+  mu <- Reduce("rbind",mu)
   Q <- Reduce("bdiag",Q)
   intrinsic <- Reduce("min",intrinsic)
   n <- Reduce("+",n)
@@ -55,7 +55,7 @@ setMethod("concat",signature = "Obs",function(...) {
   common_cols <- Reduce("intersect",lapply(df,colnames))
   compatible <- lapply(df,function(x) suppressWarnings(all(common_cols == colnames(x))))
   if(!all(unlist(compatible))) warning("Keeping only common columns in data sets when compressing")
-  df <- Reduce("rBind",lapply(df,function(x) return(subset(x,select=common_cols))))
+  df <- Reduce("rbind",lapply(df,function(x) return(subset(x,select=common_cols))))
   n <- Reduce("+",n)
   
   return(new("Obs",

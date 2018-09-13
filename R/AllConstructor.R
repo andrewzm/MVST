@@ -109,7 +109,7 @@ GMRF_RW <- function(n = 10,order=1,precinc = 1,df=data.frame(),name="none") {
 #' t_axis <- 0:10
 #' mu <- function(k) return(matrix(0,length(t_axis),1))
 #' A <- function(k)  return(sparsediag(0.4))
-#' B <- function(k)  cBind(Imat(1),k*Imat(1))
+#' B <- function(k)  cbind(Imat(1),k*Imat(1))
 #' Q <- function(k)  return(sparsediag(1))
 #' Qb = bdiag(Imat(1),Imat(1))
 #' VAR <- VAR_Gauss( mu_fun = mu,A=A, B=B, Qw = Q,t_axis = t_axis,Qb=Qb,name="firstVAR") 
@@ -440,7 +440,9 @@ setMethod("initialize",signature(.Object = "GMRF_basis"),
               varnum <- c(varnum,rep(NA,nrow(G@rep) -nrow(G)))
               if(nrow(G@rep) %% nrow(Basis@pars$vars) > 0) {
                 # NEEDS TO BE FIXED for when we have more covariates than 1 frame
-                warning("Basis and GMRF not integral units of each other's dimensions (have covariates?), only merging first n frames")
+                warning("Basis and GMRF not integral units of each other's dimensions (have covariates?), 
+                        this is only a problem if the number of covariates is more than the number
+                        of spatial basis functions. Check G@rep to make sure it is OK.")
                 nframes <- floor(nrow(G@rep) / nrow(Basis@pars$vars))
                 .Object@G@rep <- cbind(getDf(G)[1:(nframes*nrow(Basis)),],getDf(Basis),data.frame(varnum=varnum[1:nrow(G)]))  
                 extra_items <- nrow(getDf(G)) %% nrow(getDf(Basis))
@@ -482,15 +484,15 @@ setMethod("initialize",signature(.Object="VAR_Gauss"),
                   #Q_beta_part <- t(A) %*% Qw %*% B_fun(i+1) - (Imat(n) - A %*% A) %*% Qw %*% B_fun(i) # v2
                   Q_beta_part <- t(A) %*% Qw %*% B_fun(i+1) - (Qw - A %*% Qw %*% A) %*% B_fun(i) # v2
                 } else if (i == (Tn-1)) {
-                  Q_beta_part <- rBind(Q_beta_part,- Qw %*% B_fun(i))
+                  Q_beta_part <- rbind(Q_beta_part,- Qw %*% B_fun(i))
                 }  else {
-                  Q_beta_part <- rBind(Q_beta_part,t(A) %*% Qw%*% B_fun(i+1) - Qw %*% B_fun(i))
+                  Q_beta_part <- rbind(Q_beta_part,t(A) %*% Qw%*% B_fun(i+1) - Qw %*% B_fun(i))
                 }
                 B_for_sum[[i+1]] <- t(B_fun(i)) %*% Qw %*% B_fun(i) 
               } 
               B_for_sum[[1]] <- t(B_fun(0)) %*% (Qw - A %*% Qw %*% A) %*% B_fun(0) # v2
-              Q_full <- cBind(Q_full,Q_beta_part)
-              Q_full <- rBind(Q_full,cBind(t(Q_beta_part),Reduce("+", B_for_sum) + Qb))
+              Q_full <- cbind(Q_full,Q_beta_part)
+              Q_full <- rbind(Q_full,cbind(t(Q_beta_part),Reduce("+", B_for_sum) + Qb))
             }
             n_tot <- n*Tn
             Big_Q <- Q_full
@@ -724,7 +726,7 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
           } else {
             C2 <- mul_factor[j] * C
           }
-          Cmats[[i]]  <- cBind(Cmats[[i]],C2) 
+          Cmats[[i]]  <- cbind(Cmats[[i]],C2) 
           j <- j+1
         }
       }
@@ -733,9 +735,9 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
       
       if(class(from@G) == "VAR_Gauss") { # if spatio-temporal process
         .Object@Cmat <- do.call("bdiag",Cmats)  # diagonally bind matricies
-        .Object@Cmat <- cBind(.Object@Cmat,Zeromat(nrow(.Object@Cmat),nrow(from@G@Qb))) # and add on covariate effect
+        .Object@Cmat <- cbind(.Object@Cmat,Zeromat(nrow(.Object@Cmat),nrow(from@G@Qb))) # and add on covariate effect
       } else { # if spatial process
-        .Object@Cmat <- do.call("rBind",Cmats) # vertically bind matrices
+        .Object@Cmat <- do.call("rbind",Cmats) # vertically bind matrices
         # PS: No Qb because this is a repeatedly observed spatial field
         
       }
