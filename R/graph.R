@@ -378,6 +378,8 @@ setMethod("Infer",signature(Graph="Graph_2nodes"),
 #' }
 link <- function(Obj1,Obj2,Cmat = NULL, mul_factor = NULL, mulfun = NULL, muldata=NULL,
                  n_grid = NULL, mask = NULL, md5_wrapper = NULL) {
+
+
   if (is(Obj1,"process") & is(Obj2,"Obs"))
   {
     .Object <- new("linkGO",from=Obj1,to=Obj2,Cmat = Cmat,
@@ -395,8 +397,6 @@ setMethod(".find_inc_matrix",signature(basis = "FEBasis"), function(basis,obs,mu
     if("P" %in% names(obs@args)) {
       P <- obs@args$P
     }
-
-
 
   if (class(obs) == "data.frame") {
     C <- FindC(basis@pars$p,

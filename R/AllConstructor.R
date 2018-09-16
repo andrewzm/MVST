@@ -732,10 +732,11 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
       }
       
       
-      
       if(class(from@G) == "VAR_Gauss") { # if spatio-temporal process
         .Object@Cmat <- do.call("bdiag",Cmats)  # diagonally bind matricies
-        .Object@Cmat <- cbind(.Object@Cmat,Zeromat(nrow(.Object@Cmat),nrow(from@G@Qb))) # and add on covariate effect
+        .Object@Cmat <- cbind(.Object@Cmat,
+                              #Zeromat(nrow(.Object@Cmat),nrow(from@G@Qb))) # and add on covariate effect
+                              .Object@Cmat %*% Reduce("rbind", lapply(t_axis, from@G@B_fun)))
       } else { # if spatial process
         .Object@Cmat <- do.call("rbind",Cmats) # vertically bind matrices
         # PS: No Qb because this is a repeatedly observed spatial field
