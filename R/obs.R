@@ -161,47 +161,52 @@ Load_data <- function(thinning = 1,     # how much we thin grounding and shapefi
   for (i in seq_along(args)) {
     if (!file.exists(args[[i]])) stop(paste("Cannot find file ",args[[i]],sep=""))
     if (basename_ext(args[[i]]) == "shp") {
+
       cat("Loading shapefile...",sep="\n")
       shpfile <- rgdal::readOGR(dsn=dirname(args[[i]]), 
-        tools::file_path_sans_ext(basename(args[[i]])))
-      shpfile_table <- fortify(shpfile)
+       tools::file_path_sans_ext(basename(args[[i]])))
+
+      shpfile_df <- data.frame(shpfile)
+      shpfile <- rgeos::gSimplify(shpfile, topologyPreserve = TRUE, tol=thinning)
+      shpfile <- SpatialPolygonsDataFrame(shpfile, shpfile_df)
+
+      shpfile_table <- as.data.frame(broom::tidy(shpfile))
+
+      
       if (convert_m_to_km) {
         shpfile_table$long <- shpfile_table$long/1000
         shpfile_table$lat <- shpfile_table$lat/1000
       }
-      shpfile_table <- shpfile_table[seq(1,nrow(shpfile_table),thinning),]
+
       shp_names <- names(shpfile_table)
       shp_names[which(shp_names == "long")] <- "x"
       shp_names[which(shp_names == "lat")] <- "y"
       names(shpfile_table) <- shp_names
+
     } else if(basename_ext(args[[i]]) %in% c("txt","dat")) {
       cat("Loading table from file...",sep="\n")
       shpfile_table <- read.table(args[[i]],header=T)
+
     } else if(basename_ext(args[[i]]) %in% "tif") {
+      
       cat("Loading tif file...",sep="\n")
       cat(paste("...Setting tif grid to ",tif_grid," m",sep=""),sep="\n")
+      
       X <- raster(args[[i]])
-      xmin <- X@extent@xmin
-      xmax <- X@extent@xmax
-      ymin <- X@extent@ymin
-      ymax <- X@extent@ymax
-      
+      XYZ <- as.data.frame(X, xy=T, na.rm=T)
+      names(XYZ) <- c("x", "y", "z")
+
       if (convert_m_to_km) {
-        xmin <- xmin/1000
-        xmax <- xmax/1000
-        ymin <- ymin/1000
-        ymax <- ymax/1000
-        tif_grid <- tif_grid/1000
+        XYZ[,1] <- XYZ[,1]/1000
+        XYZ[,2] <- XYZ[,2]/1000
       }
-      
-      xgrid <- seq(xmin,by=tif_grid,length=X@ncols)
-      ygrid <- seq(ymax,by=-tif_grid,length=X@nrows)
-      shpfile_table <- expand.grid(xgrid,ygrid)
-      names(shpfile_table) <- c("x","y")
-      shpfile_table$z <- X[] 
+
+      shpfile_table <- XYZ
     }
+
     shapefiles[[i]] <- shpfile_table
     names(shapefiles)[i] <- names(args)[i]
+
   }
   return(shapefiles)
   
