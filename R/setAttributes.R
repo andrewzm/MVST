@@ -65,7 +65,7 @@ attribute_data <- function(df,info_df,miss_value = 0,averaging_buffer=NA) {
   df$cont_vals <- extract(info_df_ras, df[c("x", "y")], method="simple")
 
   # Check if there are missing values, if not then skip this
-  if(length(is.na(df$cont_vals)) != 0){
+  if(any(is.na(df$cont_vals))){
 
     # Now check if there is an averaging buffer when dealing with missing values
     if(!(is.na(averaging_buffer))){
