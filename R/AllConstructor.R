@@ -704,6 +704,12 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
       if(any(diff(to@df$t) < 0)) stop("Can only do link using data which is ordered temporally. Please order the data and redo.")
       
       stopifnot(all(diff(to@df$t) >= 0))
+
+      if(is(mulfun, "function")) # convert to list, required for back compatibility
+          mulfun <- lapply(1:length(t_axis), function(i) mulfun)
+      if(!is(mulfun, "list")) stop("mulfun must be a function or a list of functions")
+      if(!(length(mulfun) == length(t_axis))) stop("mulfun must be a list of length t_axis")
+      
       for(i in seq_along(t_axis)) {
         to_sub <- to
         to_sub@df <- subset(to@df,t==t_axis[i]) # find data points at this time point
@@ -713,7 +719,7 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
         if(nrow(to_sub)==0) {  # if no data points at this time point
           Cmats[[i]] <- matrix(0,0,n)  # create empty matrix
         } else {
-          Cmats[[i]] <- .find_inc_matrix(from@Basis,to_sub,mulfun = mulfun, muldata = muldata, mask = mask, n_grid = n_grid,
+          Cmats[[i]] <- .find_inc_matrix(from@Basis,to_sub,mulfun = mulfun[[i]], muldata = muldata, mask = mask, n_grid = n_grid,
                                          md5_wrapper = md5_wrapper) # otherwise compute the matrix
         }
         C <- Cmats[[i]]  # store incidence matrix at this time point
