@@ -193,7 +193,7 @@ Load_data <- function(thinning = 1,     # how much we thin grounding and shapefi
       cat(paste("...Setting tif grid to ",tif_grid," m",sep=""),sep="\n")
       
       X <- raster(args[[i]])
-      XYZ <- as.data.frame(X, xy=T, na.rm=T)
+      XYZ <- raster::as.data.frame(X, xy=T, na.rm=T)
       names(XYZ) <- c("x", "y", "z")
 
       if (convert_m_to_km) {
