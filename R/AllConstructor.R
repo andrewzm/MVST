@@ -705,10 +705,14 @@ setMethod("initialize",signature(.Object = "linkGO"),  function(.Object,from=new
       
       stopifnot(all(diff(to@df$t) >= 0))
 
-      if(is(mulfun, "function")) # convert to list, required for back compatibility
-          mulfun <- lapply(1:length(t_axis), function(i) mulfun)
-      if(!is(mulfun, "list")) stop("mulfun must be a function or a list of functions")
-      if(!(length(mulfun) == length(t_axis))) stop("mulfun must be a list of length t_axis")
+      if(!is.null(mulfun)) {
+        if(is(mulfun, "function")) # convert to list, required for back compatibility
+            mulfun <- lapply(1:length(t_axis), function(i) mulfun)
+        if(!is(mulfun, "list")) stop("mulfun must be a function or a list of functions")
+        if(!(length(mulfun) == length(t_axis))) stop("mulfun must be a list of length t_axis")
+      } else {
+        mulfun <- lapply(1:length(t_axis), function(i) NULL)
+      }
       
       for(i in seq_along(t_axis)) {
         to_sub <- to
