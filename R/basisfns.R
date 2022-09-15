@@ -90,7 +90,7 @@ tsearch2 <- function(x,y,t,xi,yi,bary=FALSE) {
     stop(paste(deparse(substitute(t)), "does not have three columns"))
   }
   storage.mode(t) <- "integer"
-  out <- .Call("tsearch", as.double(x), as.double(y), t, as.double(xi), 
+  out <- .Call("C_tsearch_orig", as.double(x), as.double(y), t, as.double(xi), 
                as.double(yi), as.logical(bary),PACKAGE="geometry")
   if (bary) {
     names(out) <- c("idx", "p")
